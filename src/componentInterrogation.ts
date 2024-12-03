@@ -104,7 +104,7 @@ export class ComponentInterrogation {
 		const mediaTypes = charac0.mediaTypesList;
 		return deviceTypesHas(charac0.deviceTypesList, DeviceTypes.SCALE) && mediaTypesHas(mediaTypes, MediaTypes.BAGGAGE);
 	}
-	static isFaceReader = (component:EnvironmentComponent) => {
+	static isBiometric = (component:EnvironmentComponent) => {
 		//return component.componentDescription === 'Face Reader';
 		const charac0 = component.componentCharacteristics?.[0];
 		if (!charac0) return;

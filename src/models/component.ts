@@ -356,9 +356,9 @@ export class DocumentReader extends DataReaderComponent {
  * @param {EnvironmentComponent} component
  * @param {Cuss2} cuss2
  */
- export class FaceReader extends DataReaderComponent {
+ export class Biometric extends DataReaderComponent {
 	constructor(component: EnvironmentComponent, cuss2: Cuss2) {
-		super(component, cuss2, DeviceType.FACE_READER);
+		super(component, cuss2, DeviceType.BIOMETRIC);
 	}
 }
 

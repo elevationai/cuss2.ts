@@ -27,7 +27,7 @@ import {
 	BoardingPassPrinter,
 	Illumination,
 	Headset,
-	FaceReader,
+	Biometric,
 	Scale,
 	Camera
 } from "./models/component.js";
@@ -59,7 +59,7 @@ const {
 	isDocumentReader,
 	isBarcodeReader,
 	isCardReader,
-	isFaceReader,
+	isBiometric,
 	isKeypad, isIllumination, isHeadset,
 	isScale, isCamera
 } = ComponentInterrogation;
@@ -259,7 +259,7 @@ export class Cuss2 {
 	announcement?: Announcement;
 	keypad?: Keypad;
 	cardReader?: CardReader;
-	faceReader?: FaceReader;
+	biometric?: Biometric;
 	scale?: Scale;
 	headset?:Headset;
 	camera?: Camera;
@@ -414,7 +414,7 @@ export class Cuss2 {
 				else if (isBarcodeReader(component)) instance = this.barcodeReader = new BarcodeReader(component, this);
 				else if (isCardReader(component)) instance = this.cardReader = new CardReader(component, this);
 				else if (isKeypad(component)) instance = this.keypad = new Keypad(component, this);
-				else if (isFaceReader(component)) instance = this.faceReader = new FaceReader(component, this);
+				else if (isBiometric(component)) instance = this.biometric = new Biometric(component, this);
 				else if (isScale(component)) instance = this.scale = new Scale(component, this);
 				else if (isCamera(component)) instance = this.camera = new Camera(component, this);
 				// subcomponents
