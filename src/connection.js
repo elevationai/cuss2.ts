@@ -114,8 +114,6 @@ export class Connection extends EventEmitter {
 				// Otherwise, determine the protocol based on the existing URL
 				protocol = /^https/.test(baseURL) ? "wss" : "ws";
 		}
-		
-		this._socketURL = protocol + baseURL.replace(/^https/, '') + '/platform/subscribe';
 
 		this._socketURL =  protocol + baseURL.replace(/^https/, '').replace(/^http/, '') + '/platform/subscribe';
 	}
