@@ -96,6 +96,7 @@ function validateComponentId(componentID:any) {
  * @property {boolean} multiTenant - The multi tenant flag.
  * @property {boolean} accessibleMode - The accessible mode flag.
  * @property {string} language - The language.
+ * @property {Subject<unknown>} onQueryError - The onQueryError subject emits when there is an error in caught from the queryComponents method.
  *
  * @example
  * // Connect to the cuss platform
@@ -171,6 +172,12 @@ function validateComponentId(componentID:any) {
  * @example
  * // Get the language
  * this.cuss2.language
+ * @example
+ * // Subscribe to the onQueryError subject
+ * this.cuss2.onQueryError.subscribe((error) => {
+ * 	console.log('error querying components', error)
+ * 	// Do something with the error
+ * });
  */
 export class Cuss2 {
 
