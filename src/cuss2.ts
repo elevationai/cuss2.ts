@@ -269,6 +269,7 @@ export class Cuss2 {
 	multiTenant?: boolean;
 	accessibleMode: boolean = false;
 	language?: string;
+	onQueryError: Subject<unknown> = new Subject<unknown>();
 
   /**
 	* @typeof {StateChange.current} state Get the current application state from the CUSS 2 platform
@@ -293,7 +294,10 @@ export class Cuss2 {
 		}
 		log("info", "Getting Component List");
 		await this.api.getComponents();
-		await this.queryComponents().catch(e => log("error",'error querying components', e))
+		await this.queryComponents().catch((e) => {
+			log("error",'error querying components', e)
+			this.onQueryError.next(e)
+		});
 		await this.requestUnavailableState();
 	}
 
@@ -322,7 +326,10 @@ export class Cuss2 {
 			this.stateChange.next(new StateChange(prevState, currentState as AppState));
 
 			if (currentState === AppState.UNAVAILABLE) {
-				await this.queryComponents().catch(e => log('verbose', 'failed to queryComponents', e));
+				await this.queryComponents().catch((e) => {
+					log("error",'error querying components', e)
+					this.onQueryError.next(e)
+				});
 				if (this._online) {
 					this.checkRequiredComponentsAndSyncState();
 				}
