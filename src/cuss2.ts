@@ -293,8 +293,8 @@ export class Cuss2 {
 		}
 		log("info", "Getting Component List");
 		await this.api.getComponents();
+		await this.queryComponents().catch(e => log("error",'error querying components', e))
 		await this.requestUnavailableState();
-		this.queryComponents().catch(e => log("error",'error querying components', e))
 	}
 
 	async _handleWebSocketMessage(event) {

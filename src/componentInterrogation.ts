@@ -101,8 +101,7 @@ export class ComponentInterrogation {
 		if (component.componentType !== ComponentTypes.DATAINPUT) return;
 		const charac0 = component.componentCharacteristics?.[0];
 		if (!charac0) return;
-		const mediaTypes = charac0.mediaTypesList;
-		return deviceTypesHas(charac0.deviceTypesList, DeviceTypes.SCALE) && mediaTypesHas(mediaTypes, MediaTypes.BAGGAGE);
+		return deviceTypesHas(charac0.deviceTypesList, DeviceTypes.SCALE);
 	}
 	static isFaceReader = (component:EnvironmentComponent) => {
 		//return component.componentDescription === 'Face Reader';
