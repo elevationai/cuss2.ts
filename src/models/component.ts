@@ -411,6 +411,17 @@ export class Scale extends DataReaderComponent {
 	}
 }
 
+/**
+* @class A component that provides data input
+* @param {EnvironmentComponent} component
+* @param {Cuss2} cuss2
+*/
+export class RFID extends DataReaderComponent {
+   constructor(component: EnvironmentComponent, cuss2: Cuss2) {
+	   super(component, cuss2, DeviceType.RFID);
+   }
+}
+
 export class Camera extends DataReaderComponent {
 	constructor(component: EnvironmentComponent, cuss2: Cuss2) {
 		super(component, cuss2, DeviceType.CAMERA);
@@ -915,5 +926,38 @@ export class Illumination extends Component {
 export class Headset extends Component {
 	constructor(component: EnvironmentComponent, cuss2: Cuss2) {
 		super(component, cuss2, DeviceType.HEADSET);
+	}
+}
+
+/**
+ * @class A component that provides audio feedback.
+ * @param {EnvironmentComponent} component
+ * @param {Cuss2} cuss2
+ */
+export class InsertionBelt extends Component {
+	constructor(component: EnvironmentComponent, cuss2: Cuss2) {
+		super(component, cuss2, DeviceType.INSERTION_BELT);
+	}
+}
+
+/**
+ * @class A component that provides audio feedback.
+ * @param {EnvironmentComponent} component
+ * @param {Cuss2} cuss2
+ */
+export class VerificationBelt extends Component {
+	constructor(component: EnvironmentComponent, cuss2: Cuss2) {
+		super(component, cuss2, DeviceType.VERIFICATION_BELT);
+	}
+}
+
+/**
+ * @class A component that provides audio feedback.
+ * @param {EnvironmentComponent} component
+ * @param {Cuss2} cuss2
+ */
+export class ParkingBelt extends Component {
+	constructor(component: EnvironmentComponent, cuss2: Cuss2) {
+		super(component, cuss2, DeviceType.PARKING_BELT);
 	}
 }

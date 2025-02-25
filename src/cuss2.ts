@@ -13,7 +13,7 @@ import {BehaviorSubject, Subject} from "rxjs";
 import {Connection} from "./connection.js";
 import {StateChange} from "./models/stateChange.js";
 import {ComponentInterrogation} from "./componentInterrogation.js";
-import { ApplicationActivationExecutionModeEnum, ApplicationStateCodes } from 'cuss2-typescript-models';
+import { ApplicationActivationExecutionModeEnum, ApplicationStateCodes, EnvironmentComponent } from 'cuss2-typescript-models';
 import {
 	Announcement,
 	BarcodeReader,
@@ -29,7 +29,11 @@ import {
 	Headset,
 	FaceReader,
 	Scale,
-	Camera
+	Camera,
+	InsertionBelt,
+	VerificationBelt,
+	ParkingBelt,
+	RFID
 } from "./models/component.js";
 
 import {
@@ -61,7 +65,8 @@ const {
 	isCardReader,
 	isFaceReader,
 	isKeypad, isIllumination, isHeadset,
-	isScale, isCamera
+	isScale, isCamera, isInsertionBelt,
+	isParkingBelt, isRFIDReader, isVerificationBelt
 } = ComponentInterrogation;
 
 /**
@@ -268,6 +273,10 @@ export class Cuss2 {
 	cardReader?: CardReader;
 	faceReader?: FaceReader;
 	scale?: Scale;
+	insertionBelt?: InsertionBelt;
+	verificationBelt?: VerificationBelt;
+	parkingBelt?: ParkingBelt;
+	rfid?: RFID;
 	headset?:Headset;
 	camera?: Camera;
 	activated: Subject<ApplicationActivation> = new Subject<ApplicationActivation>();
@@ -431,6 +440,10 @@ export class Cuss2 {
 				else if (isFaceReader(component)) instance = this.faceReader = new FaceReader(component, this);
 				else if (isScale(component)) instance = this.scale = new Scale(component, this);
 				else if (isCamera(component)) instance = this.camera = new Camera(component, this);
+				else if (isInsertionBelt(component)) instance = this.insertionBelt = new InsertionBelt(component, this);
+				else if (isVerificationBelt(component)) instance = this.verificationBelt = new VerificationBelt(component, this);
+				else if (isParkingBelt(component)) instance = this.parkingBelt = new ParkingBelt(component, this);
+				else if (isRFIDReader(component)) instance = this.rfid = new RFID(component, this);
 				// subcomponents
 				else if (isFeeder(component))  return; // instance = new Feeder(component, this);
 				else if (isDispenser(component))  return; // instance = new Dispenser(component, this);
