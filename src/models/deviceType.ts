@@ -22,5 +22,9 @@ export const DeviceType = {
 	HEADSET: 'HEADSET' as DeviceType,
 	FACE_READER: 'FACE_READER' as DeviceType,
 	SCALE: 'SCALE' as DeviceType,
-	CAMERA: 'CAMERA' as DeviceType
+	CAMERA: 'CAMERA' as DeviceType,
+	INSERTION_BELT: 'INSERTION_BELT' as DeviceType,
+	VERIFICATION_BELT: 'VERIFICATION_BELT' as DeviceType,
+	PARKING_BELT: 'PARKING_BELT' as DeviceType,
+	RFID: 'RFID' as DeviceType,
 };
