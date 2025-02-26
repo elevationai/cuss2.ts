@@ -13,7 +13,7 @@ import {BehaviorSubject, Subject} from "rxjs";
 import {Connection} from "./connection.js";
 import {StateChange} from "./models/stateChange.js";
 import {ComponentInterrogation} from "./componentInterrogation.js";
-import { ApplicationActivationExecutionModeEnum, ApplicationStateCodes } from 'cuss2-typescript-models';
+import { ApplicationActivationExecutionModeEnum, ApplicationStateCodes, EnvironmentComponent } from 'cuss2-typescript-models';
 import {
 	Announcement,
 	BarcodeReader,
@@ -29,7 +29,11 @@ import {
 	Headset,
 	Biometric,
 	Scale,
-	Camera
+	Camera,
+	InsertionBelt,
+	VerificationBelt,
+	ParkingBelt,
+	RFID
 } from "./models/component.js";
 
 import {
@@ -61,7 +65,8 @@ const {
 	isCardReader,
 	isBiometric,
 	isKeypad, isIllumination, isHeadset,
-	isScale, isCamera
+	isScale, isCamera, isInsertionBelt,
+	isParkingBelt, isRFIDReader, isVerificationBelt
 } = ComponentInterrogation;
 
 /**
@@ -96,6 +101,7 @@ function validateComponentId(componentID:any) {
  * @property {boolean} multiTenant - The multi tenant flag.
  * @property {boolean} accessibleMode - The accessible mode flag.
  * @property {string} language - The language.
+ * @property {Subject<unknown>} onQueryError - The onQueryError subject emits when there is an error in caught from the queryComponents method.
  *
  * @example
  * // Connect to the cuss platform
@@ -171,6 +177,12 @@ function validateComponentId(componentID:any) {
  * @example
  * // Get the language
  * this.cuss2.language
+ * @example
+ * // Subscribe to the onQueryError subject
+ * this.cuss2.onQueryError.subscribe((error) => {
+ * 	console.log('error querying components', error)
+ * 	// Do something with the error
+ * });
  */
 export class Cuss2 {
 
@@ -261,6 +273,10 @@ export class Cuss2 {
 	cardReader?: CardReader;
 	biometric?: Biometric;
 	scale?: Scale;
+	insertionBelt?: InsertionBelt;
+	verificationBelt?: VerificationBelt;
+	parkingBelt?: ParkingBelt;
+	rfid?: RFID;
 	headset?:Headset;
 	camera?: Camera;
 	activated: Subject<ApplicationActivation> = new Subject<ApplicationActivation>();
@@ -269,6 +285,7 @@ export class Cuss2 {
 	multiTenant?: boolean;
 	accessibleMode: boolean = false;
 	language?: string;
+	onQueryError: Subject<unknown> = new Subject<unknown>();
 
   /**
 	* @typeof {StateChange.current} state Get the current application state from the CUSS 2 platform
@@ -293,8 +310,11 @@ export class Cuss2 {
 		}
 		log("info", "Getting Component List");
 		await this.api.getComponents();
+		await this.queryComponents().catch((e) => {
+			log("error",'error querying components', e)
+			this.onQueryError.next(e)
+		});
 		await this.requestUnavailableState();
-		this.queryComponents().catch(e => log("error",'error querying components', e))
 	}
 
 	async _handleWebSocketMessage(event) {
@@ -322,7 +342,10 @@ export class Cuss2 {
 			this.stateChange.next(new StateChange(prevState, currentState as AppState));
 
 			if (currentState === AppState.UNAVAILABLE) {
-				await this.queryComponents().catch(e => log('verbose', 'failed to queryComponents', e));
+				await this.queryComponents().catch((e) => {
+					log("error",'error querying components', e)
+					this.onQueryError.next(e)
+				});
 				if (this._online) {
 					this.checkRequiredComponentsAndSyncState();
 				}
@@ -417,6 +440,10 @@ export class Cuss2 {
 				else if (isBiometric(component)) instance = this.biometric = new Biometric(component, this);
 				else if (isScale(component)) instance = this.scale = new Scale(component, this);
 				else if (isCamera(component)) instance = this.camera = new Camera(component, this);
+				else if (isInsertionBelt(component)) instance = this.insertionBelt = new InsertionBelt(component, this);
+				else if (isVerificationBelt(component)) instance = this.verificationBelt = new VerificationBelt(component, this);
+				else if (isParkingBelt(component)) instance = this.parkingBelt = new ParkingBelt(component, this);
+				else if (isRFIDReader(component)) instance = this.rfid = new RFID(component, this);
 				// subcomponents
 				else if (isFeeder(component))  return; // instance = new Feeder(component, this);
 				else if (isDispenser(component))  return; // instance = new Dispenser(component, this);

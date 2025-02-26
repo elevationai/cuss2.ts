@@ -101,8 +101,7 @@ export class ComponentInterrogation {
 		if (component.componentType !== ComponentTypes.DATAINPUT) return;
 		const charac0 = component.componentCharacteristics?.[0];
 		if (!charac0) return;
-		const mediaTypes = charac0.mediaTypesList;
-		return deviceTypesHas(charac0.deviceTypesList, DeviceTypes.SCALE) && mediaTypesHas(mediaTypes, MediaTypes.BAGGAGE);
+		return deviceTypesHas(charac0.deviceTypesList, DeviceTypes.SCALE);
 	}
 	static isBiometric = (component:EnvironmentComponent) => {
 		//return component.componentDescription === 'Face Reader';
@@ -116,5 +115,31 @@ export class ComponentInterrogation {
 		if (!charac0) return;
 		const mediaTypes = charac0.mediaTypesList;
 		return deviceTypesHas(charac0.deviceTypesList, DeviceTypes.CAMERA) && mediaTypesHas(mediaTypes, MediaTypes.IMAGE);
+	}
+
+	static isRFIDReader = (component: EnvironmentComponent): boolean => {
+		if (component.componentType !== ComponentTypes.DATAINPUT) return;
+		const charac0 = component.componentCharacteristics?.[0];
+		if (!charac0) return;
+		const mediaTypes = charac0.mediaTypesList;
+		return !!deviceTypesHas(charac0.deviceTypesList, DeviceTypes.CONTACTLESS) && !!mediaTypesHas(mediaTypes, MediaTypes.RFID);
+	}
+
+	static isInsertionBelt = (component: EnvironmentComponent): boolean => {
+		const charac0 = component.componentCharacteristics?.[0];
+		if (!charac0) return;
+		return component.componentType == ComponentTypes.INSERTIONBELT;
+	}
+
+	static isVerificationBelt = (component: EnvironmentComponent): boolean => {
+		const charac0 = component.componentCharacteristics?.[0];
+		if (!charac0) return;
+		return component.componentType == ComponentTypes.VERIFICATIONBELT;
+	}
+
+	static isParkingBelt = (component: EnvironmentComponent): boolean => {
+		const charac0 = component.componentCharacteristics?.[0];
+		if (!charac0) return;
+		return component.componentType == ComponentTypes.PARKINGBELT
 	}
 }

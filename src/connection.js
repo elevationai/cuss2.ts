@@ -106,8 +106,16 @@ export class Connection extends EventEmitter {
 		}
 		this._auth = { url: _tokenURL, client_id, client_secret }
 
-		let protocol = /^https/.test(baseURL) ? "wss" : "ws"
-		this._socketURL = protocol + baseURL.replace(/^https?/, '') + '/platform/subscribe'
+		let protocol;
+		if (/^wss?:\/\//.test(baseURL)) {
+			// If the URL already starts with ws:// or wss://, no need to prepend a protocol
+			protocol = '';
+		} else {
+				// Otherwise, determine the protocol based on the existing URL
+				protocol = /^https/.test(baseURL) ? "wss" : "ws";
+		}
+
+		this._socketURL =  protocol + baseURL.replace(/^https/, '').replace(/^http/, '') + '/platform/subscribe';
 	}
 
 	async _connect() {
