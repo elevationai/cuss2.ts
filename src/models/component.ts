@@ -1,5 +1,5 @@
-import {BehaviorSubject, combineLatest, Subject} from "rxjs";
-import {Cuss2, helpers} from "../cuss2.js";
+import { BehaviorSubject, combineLatest, Subject } from "rxjs";
+import { Cuss2, helpers } from "../cuss2.js";
 import {
 	DataRecordList,
 	CUSSDataTypes,
@@ -11,9 +11,9 @@ import {
 	MessageCodes,
 	PlatformDirectives
 } from "cuss2-typescript-models";
-import {DeviceType} from './deviceType.js';
-import {PlatformResponseError} from "./platformResponseError.js";
-import {take, timeout} from "rxjs/operators";
+import { DeviceType } from './deviceType.js';
+import { PlatformResponseError } from "./platformResponseError.js";
+import { take, timeout } from "rxjs/operators";
 
 /**
  * @class General object representing a CUSS component with methods and properties to interact with it.
@@ -178,17 +178,17 @@ export class Component {
 		poll();
 	}
 
-	_handleMessage(data:any) {
+	_handleMessage(data: any) {
 		this.onmessage.next(data);
 	}
 
-	async _call(action:Function) {
+	async _call(action: Function) {
 		this.pendingCalls++;
-		const decrement = (r:any)=>{
+		const decrement = (r: any) => {
 			this.pendingCalls--;
 			return r;
 		};
-		return action().then(decrement).catch((e:any) => Promise.reject(decrement(e)))
+		return action().then(decrement).catch((e: any) => Promise.reject(decrement(e)))
 	}
 
 	/**
@@ -202,7 +202,7 @@ export class Component {
 	 */
 	enable(...args: any[]): Promise<PlatformData> {
 		return this._call(() => this.api.enable(this.id))
-			.then((r:any) => {
+			.then((r: any) => {
 				this.enabled = true;
 				return r;
 			})
@@ -217,11 +217,11 @@ export class Component {
 	 */
 	disable(): Promise<PlatformData> {
 		return this._call(() => this.api.disable(this.id))
-			.then((r:any) => {
+			.then((r: any) => {
 				this.enabled = false;
 				return r;
 			})
-			.catch((e:PlatformResponseError) => {
+			.catch((e: PlatformResponseError) => {
 				if (e.messageCode === MessageCodes.OUTOFSEQUENCE) {
 					this.enabled = false;
 					return e;
@@ -297,10 +297,10 @@ export class DataReaderComponent extends Component {
 	data = new Subject<string[]>();
 	previousData: string[] = [];
 
-	_handleMessage(data:PlatformData) {
+	_handleMessage(data: PlatformData) {
 		this.onmessage.next(data);
 		if (data?.meta?.messageCode === MessageCodes.DATAPRESENT && data?.payload?.dataRecords?.length) {
-			this.previousData = data?.payload?.dataRecords?.map((dr:DataRecord) => dr?.data);
+			this.previousData = data?.payload?.dataRecords?.map((dr: DataRecord) => dr?.data);
 			this.data.next(this.previousData)
 		}
 	}
@@ -312,16 +312,16 @@ export class DataReaderComponent extends Component {
 	 * // Enable the component and start reading data
 	 * DataReaderComponent.read(5000);
 	 */
-	async read(ms:number=30000) {
-		return new Promise(async(resolve,reject)=>{
-				await this.enable();
+	async read(ms: number = 30000) {
+		return new Promise(async (resolve, reject) => {
+			await this.enable();
 
-				const subscription = this.data
-					.pipe(take(1))
-					.pipe(timeout(ms))
-					.subscribe(resolve,reject);
+			const subscription = this.data
+				.pipe(take(1))
+				.pipe(timeout(ms))
+				.subscribe(resolve, reject);
 
-			})
+		})
 			.finally(() => this.disable());
 	}
 }
@@ -351,18 +351,6 @@ export class DocumentReader extends DataReaderComponent {
 }
 
 /**
- * @class A component that reads documents from the platform.
- * @extends DataReaderComponent
- * @param {EnvironmentComponent} component
- * @param {Cuss2} cuss2
- */
- export class FaceReader extends DataReaderComponent {
-	constructor(component: EnvironmentComponent, cuss2: Cuss2) {
-		super(component, cuss2, DeviceType.FACE_READER);
-	}
-}
-
-/**
  * @class A component that reads data from the platform.
  * @extends DataReaderComponent
  * @param {EnvironmentComponent} component
@@ -372,18 +360,20 @@ export class CardReader extends DataReaderComponent {
 	constructor(component: EnvironmentComponent, cuss2: Cuss2) {
 		super(component, cuss2, DeviceType.MSR_READER);
 	}
-/**
- * Call set up to enable payment mode or form of identification.
- * @param {boolean} yes true is payment mode, false is form of identification
- * @example
- * // Enable payment mode
- * CardReader.enablePayment(true);
- */
-	async enablePayment(yes:boolean) {
-		await this.setup({dataRecords: [{
-			data: '',
-			dsTypes: [yes? 'DS_TYPES_PAYMENT_ISO' as CUSSDataTypes : CUSSDataTypes.FOIDISO]
-		}]});
+	/**
+	 * Call set up to enable payment mode or form of identification.
+	 * @param {boolean} yes true is payment mode, false is form of identification
+	 * @example
+	 * // Enable payment mode
+	 * CardReader.enablePayment(true);
+	 */
+	async enablePayment(yes: boolean) {
+		await this.setup({
+			dataRecords: [{
+				data: '',
+				dsTypes: [yes ? 'DS_TYPES_PAYMENT_ISO' as CUSSDataTypes : CUSSDataTypes.FOIDISO]
+			}]
+		});
 	}
 
 	/**
@@ -393,7 +383,7 @@ export class CardReader extends DataReaderComponent {
 	 * // read the card data for payment
 	 * CardReader.readPayment(5000);
 	 */
-	async readPayment(ms:number=30000) {
+	async readPayment(ms: number = 30000) {
 		await this.enablePayment(true);
 		await this.read(ms);
 		await this.enablePayment(false);
@@ -459,7 +449,7 @@ export class Printer extends Component {
 	constructor(component: EnvironmentComponent, cuss2: Cuss2, _type: DeviceType) {
 		super(component, cuss2, _type);
 
-		const missingLink = (msg:string) => { throw new Error(msg); };
+		const missingLink = (msg: string) => { throw new Error(msg); };
 		const linked = component.linkedComponentIDs?.map(id => cuss2.components[id as number] as Component) || [];
 
 		this.feeder = linked.find(c => c instanceof Feeder) || missingLink('Feeder not found for Printer ' + this.id);
@@ -477,13 +467,13 @@ export class Printer extends Component {
 			this.feeder.readyStateChanged,
 			this.dispenser.readyStateChanged
 		])
-		.subscribe(([printerReady,feederReady,dispenserReady]: boolean[]) => {
-			const ready = printerReady && feederReady && dispenserReady;
-			if (this.combinedReady !== ready) {
-				this._combinedReady = ready;
-				this.combinedReadyStateChanged.next(ready);
-			}
-		});
+			.subscribe(([printerReady, feederReady, dispenserReady]: boolean[]) => {
+				const ready = printerReady && feederReady && dispenserReady;
+				if (this.combinedReady !== ready) {
+					this._combinedReady = ready;
+					this.combinedReadyStateChanged.next(ready);
+				}
+			});
 		this.combinedReadyStateChanged = new BehaviorSubject<boolean>(false);
 
 		// @ts-ignore cause you're not smart enough
@@ -494,13 +484,13 @@ export class Printer extends Component {
 			this.feeder.statusChanged,
 			this.dispenser.statusChanged
 		])
-		.subscribe((statuses: MessageCodes[]) => {
-			const status = statuses.find(s => s != MessageCodes.OK) || MessageCodes.OK;
-			if (this.combinedStatus !== status) {
-				this._combinedStatus = status;
-				this.combinedStatusChanged.next(status);
-			}
-		});
+			.subscribe((statuses: MessageCodes[]) => {
+				const status = statuses.find(s => s != MessageCodes.OK) || MessageCodes.OK;
+				if (this.combinedStatus !== status) {
+					this._combinedStatus = status;
+					this.combinedStatusChanged.next(status);
+				}
+			});
 		this.combinedStatusChanged = new BehaviorSubject<MessageCodes>(MessageCodes.OK);
 	}
 
@@ -600,47 +590,47 @@ export class Printer extends Component {
 	 */
 	async printRaw(rawData: string) {
 		return this.sendRaw(rawData)
-			.catch((e:PlatformResponseError) => {
+			.catch((e: PlatformResponseError) => {
 				return this.cancel().then(() => { throw e })
 			});
 	}
 
-  /**
-	 * Sends a setup command to the printer.
-	 * @param {string | string[]}raw - The setup data to send to the printer.
-	 * @param { Array<CUSSDataTypes>} dsTypes - The data types of the setup data. *OptionalParam*
-	 * @returns {Promise<PlatformData>} - The response from the platform.
-	 * @example
-	 * //setup
-	 * await Printer.setupRaw('string')
-	 */
-	async setupRaw(raw: string|string[], dsTypes: Array<CUSSDataTypes> = [ CUSSDataTypes.ITPS ]) {
+	/**
+	   * Sends a setup command to the printer.
+	   * @param {string | string[]}raw - The setup data to send to the printer.
+	   * @param { Array<CUSSDataTypes>} dsTypes - The data types of the setup data. *OptionalParam*
+	   * @returns {Promise<PlatformData>} - The response from the platform.
+	   * @example
+	   * //setup
+	   * await Printer.setupRaw('string')
+	   */
+	async setupRaw(raw: string | string[], dsTypes: Array<CUSSDataTypes> = [CUSSDataTypes.ITPS]) {
 		const isArray = Array.isArray(raw);
 		if (!raw || (isArray && !raw[0])) {
-			return Promise.resolve(isArray? [] : undefined);
+			return Promise.resolve(isArray ? [] : undefined);
 		}
-		const rawArray:string[] = isArray? raw as string[] : [raw as string];
+		const rawArray: string[] = isArray ? raw as string[] : [raw as string];
 
-		const dx = (r:string) => [{
+		const dx = (r: string) => [{
 			data: r as any,
 			dsTypes: dsTypes
 		}]
 
 		return await Promise.all(rawArray.map(r => this.api.setup(this.id, dx(r))))
-			.then(results => isArray? results : results[0])
+			.then(results => isArray ? results : results[0])
 	}
 
-	async sendRaw(raw: string, dsTypes: Array<CUSSDataTypes> = [ CUSSDataTypes.ITPS ] ) {
-		const dataRecords =[{
+	async sendRaw(raw: string, dsTypes: Array<CUSSDataTypes> = [CUSSDataTypes.ITPS]) {
+		const dataRecords = [{
 			data: raw as any,
 			dsTypes: dsTypes
 		}];
 		return this.api.send(this.id, dataRecords);
 	}
 
-	async aeaCommand(cmd:string) {
+	async aeaCommand(cmd: string) {
 		const response = await this.setupRaw(cmd);
-		return (response.dataRecords||[]).map((r:any)=>r.data||'')
+		return (response.dataRecords || []).map((r: any) => r.data || '')
 	}
 
 	/**
@@ -654,24 +644,24 @@ export class Printer extends Component {
 		return helpers.deserializeDictionary((await this.aeaCommand('ES'))[0]);
 	}
 
-	async _getPairedResponse(cmd:string, n:number=2) {
+	async _getPairedResponse(cmd: string, n: number = 2) {
 		const response = (await this.aeaCommand(cmd))[0];
-		return helpers.split_every(response.substr(response.indexOf('OK')+2), n) || [];
+		return helpers.split_every(response.substr(response.indexOf('OK') + 2), n) || [];
 	}
 
-	logos:any = {
-		clear: async (id='') => {
-			const response = await this.aeaCommand('LC'+id);
+	logos: any = {
+		clear: async (id = '') => {
+			const response = await this.aeaCommand('LC' + id);
 			return response[0] && response[0].indexOf('OK') > -1;
 		},
-		query: async (id='') => {
+		query: async (id = '') => {
 			return this._getPairedResponse('LS')
 		},
 	};
 
-	pectabs:any = {
-		clear: async (id='') => {
-			const response = await this.aeaCommand('PC'+id);
+	pectabs: any = {
+		clear: async (id = '') => {
+			const response = await this.aeaCommand('PC' + id);
 			return response[0] && response[0].indexOf('OK') > -1;
 		},
 		query: async () => {
@@ -692,9 +682,9 @@ export class BagTagPrinter extends Printer {
 		super(component, cuss2, DeviceType.BAG_TAG_PRINTER);
 	}
 
-	pectabs:any = {
-		clear: async (id='') => {
-			const response = await this.aeaCommand('PC'+id);
+	pectabs: any = {
+		clear: async (id = '') => {
+			const response = await this.aeaCommand('PC' + id);
 			return response[0] && response[0].indexOf('OK') > -1;
 		},
 		query: async () => {
@@ -714,12 +704,12 @@ export class BoardingPassPrinter extends Printer {
 		super(component, cuss2, DeviceType.BOARDING_PASS_PRINTER);
 	}
 
-	templates:any = {
-		clear: async (id='') => {
-			const response = await this.aeaCommand('TC'+id);
+	templates: any = {
+		clear: async (id = '') => {
+			const response = await this.aeaCommand('TC' + id);
 			return response[0] && response[0].indexOf('OK') > -1;
 		},
-		query: async (id='') => {
+		query: async (id = '') => {
 			return this._getPairedResponse('TA')
 		},
 	};
@@ -812,7 +802,7 @@ export class Keypad extends Component {
 		super(component, cuss2, DeviceType.KEY_PAD);
 	}
 
-	_handleMessage(message:PlatformData) {
+	_handleMessage(message: PlatformData) {
 		super._handleMessage(message);
 		if (message.meta.componentID !== this.id) return;
 
@@ -847,20 +837,20 @@ export class Announcement extends Component {
 	 * @param {string} lang - The language used to say the text.
 	 * @returns {Promise<PlatformData>} - The response from the platform.
 	 * @example
- 	 * Announcement.say("something to say", "en-US");
+	   * Announcement.say("something to say", "en-US");
 	 */
-	say(text:string, lang:string='en-US') {
+	say(text: string, lang: string = 'en-US') {
 		const xml = `<?xml version="1.0" encoding="UTF-8"?><speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${lang}">${text}</speak>`;
 		return this.play(xml);
 	}
-	play(xml:string) {
+	play(xml: string) {
 		return this.api.announcement.play(this.id, xml);
 	}
 	/**
 	 * Stop the announcement.
 	 * @returns {Promise<PlatformData>} - The response from the platform.
 	 * @example
- 	 * Announcement.stop();
+	   * Announcement.stop();
 	 */
 	stop() {
 		return this.api.announcement.stop(this.id);
@@ -878,7 +868,7 @@ export class Announcement extends Component {
 	 * Resume the announcement.
 	 * @returns {Promise<PlatformData>} - The response from the platform.
 	 * @example
- 	 * Announcement.resume();
+	   * Announcement.resume();
 	 */
 	resume() {
 		return this.api.announcement.resume(this.id);
@@ -905,16 +895,16 @@ export class Illumination extends Component {
 	 * //enable the illumination
 	 * Illumination.enable(1000, '#FF0000', [1, 2]);
 	 */
-	async enable(duration: number, color?: String|number[], blink?: number[]) {
+	async enable(duration: number, color?: String | number[], blink?: number[]) {
 		// @ts-ignore
-		let name = (typeof color === 'string')? (CUSS2IlluminationdomainIlluminationDataLightColor.NameEnum)[color] : undefined;
-		let rgb = (Array.isArray(color) && color.length === 3)? {red:color[0], green:color[1], blue:color[2]} : undefined;
-		let blinkRate = (Array.isArray(blink) && blink.length === 2)? {durationOn:blink[0], durationOff:blink[1]} : undefined;
+		let name = (typeof color === 'string') ? (CUSS2IlluminationdomainIlluminationDataLightColor.NameEnum)[color] : undefined;
+		let rgb = (Array.isArray(color) && color.length === 3) ? { red: color[0], green: color[1], blue: color[2] } : undefined;
+		let blinkRate = (Array.isArray(blink) && blink.length === 2) ? { durationOn: blink[0], durationOff: blink[1] } : undefined;
 
-		if(this.enabled)
+		if (this.enabled)
 			await this.disable();
 		await super.enable();
-		return await this.send({illuminationData: {duration, lightColor: {name, rgb}, blinkRate}});
+		return await this.send({ illuminationData: { duration, lightColor: { name, rgb }, blinkRate } });
 	}
 }
 
@@ -926,6 +916,17 @@ export class Illumination extends Component {
 export class Headset extends Component {
 	constructor(component: EnvironmentComponent, cuss2: Cuss2) {
 		super(component, cuss2, DeviceType.HEADSET);
+	}
+}
+
+/**
+ * @class A component that provides biometrics.
+ * @param {EnvironmentComponent} component
+ * @param {Cuss2} cuss2
+ */
+export class Biometric extends Component {
+	constructor(component: EnvironmentComponent, cuss2: Cuss2) {
+		super(component, cuss2, DeviceType.BIOMETRIC);
 	}
 }
 
