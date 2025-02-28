@@ -103,7 +103,7 @@ export class ComponentInterrogation {
 		if (!charac0) return;
 		return deviceTypesHas(charac0.deviceTypesList, DeviceTypes.SCALE);
 	}
-	static isFaceReader = (component:EnvironmentComponent) => {
+	static isBiometric = (component:EnvironmentComponent) => {
 		//return component.componentDescription === 'Face Reader';
 		const charac0 = component.componentCharacteristics?.[0];
 		if (!charac0) return;
