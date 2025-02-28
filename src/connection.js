@@ -44,7 +44,7 @@ export class Connection extends EventEmitter {
 				'Content-Type': 'application/json'
 			},
 			redirect: 'follow',
-			body: JSON.stringify({ client_id, client_secret }) // body data type must match "Content-Type" header
+			body: JSON.stringify({ client_id, client_secret, grant_type:'client_credentials'  }) // body data type must match "Content-Type" header
 		})
 		return response.json()
 	}
