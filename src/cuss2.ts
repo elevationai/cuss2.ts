@@ -69,13 +69,6 @@ const {
 	isParkingBelt, isRFIDReader, isVerificationBelt
 } = ComponentInterrogation;
 
-enum PrinterSetupStatus {
-	NOT_SETUP = 'NOT_SETUP',
-	SETUP_SUCCESS = 'SETUP_SUCCESS',
-	SETUP_FAILED = 'SETUP_FAILED',
-	SETUP_MISSED = 'SETUP_MISSED'
-}
-
 /**
  * @function validateComponentId
  * @param {number} componentID - The componentID to validate
@@ -201,12 +194,13 @@ export class Cuss2 {
 	 * @param {string} deviceID - The GUID for the device connecting to the CUSS 2 platform
 	 * @param {string} client_id  - The client_id of the CUSS 2 platform
 	 * @param {string} client_secret  - The client_secret of the CUSS 2 platform
+	 * @param {boolean}	requestUnavailable - Request the platform to change the application state to Unavailable state after initialization.
 	 * @returns {Promise<Cuss2>} A promise that resolves to a Cuss2 object
 	 * @example
 	 * const connect = await Cuss2.connect('url', 'oauth', '00000000-0000-0000-0000-000000000000', 'client_id', 'client_secret');
 	 *
 	 */
-	static async connect(wss: string, oauth: string = null, deviceID: string = '00000000-0000-0000-0000-000000000000', client_id: string, client_secret: string, setupData?: { bagTagPrinter?: string | string[], boardingPassPrinter?: string | string[] }): Promise<Cuss2> {
+	static async connect(wss: string, oauth: string = null, deviceID: string = '00000000-0000-0000-0000-000000000000', client_id: string, client_secret: string, requestUnavailable = true): Promise<Cuss2> {
 		document.body.setAttribute('elevated-cuss2', '1')
 		function broadcast(detail: any) {
 			const event = new CustomEvent('send_to_cuss2_devtools', {detail});
@@ -216,6 +210,7 @@ export class Cuss2 {
 
 		const connection = await Connection.connect(wss, oauth, deviceID, client_id, client_secret);
 		const cuss2 = new Cuss2(connection);
+		cuss2.requestUnavailableAfterInitialize = requestUnavailable;
 
 		if (document.body.hasAttribute('cuss2-devtools')) {
 			console.log('cuss2-devtools detected');
@@ -241,7 +236,7 @@ export class Cuss2 {
 			}, false);
 		}
 
-		await cuss2._initialize(setupData);
+		await cuss2._initialize(requestUnavailable);
 		return cuss2;
 	}
 	static _get(cuss2: Cuss2, parts: String[]) {
@@ -258,7 +253,7 @@ export class Cuss2 {
 		// Subscribe to the connection being closed and attempt to reconnect
 		connection.on('close', async () => {
 			await connection._connect();
-			await this._initialize();
+			await this._initialize(this.requestUnavailableAfterInitialize);
 		});
 	}
 
@@ -269,8 +264,7 @@ export class Cuss2 {
 	componentStateChange: BehaviorSubject<Component|null> = new BehaviorSubject<Component|null>(null);
 	onmessage: Subject<PlatformData> = new Subject<PlatformData>();
 	onSessionTimeout: Subject<MessageCodes> = new Subject<MessageCodes>();
-	onBagTagPrinterInitSetup: BehaviorSubject<PrinterSetupStatus> = new BehaviorSubject<PrinterSetupStatus>(PrinterSetupStatus.NOT_SETUP);
-	onBoardingPassPrinterInitSetup: BehaviorSubject<PrinterSetupStatus> = new BehaviorSubject<PrinterSetupStatus>(PrinterSetupStatus.NOT_SETUP);
+	requestUnavailableAfterInitialize: boolean = true;
 
 	bagTagPrinter?: BagTagPrinter;
 	boardingPassPrinter?: BoardingPassPrinter;
@@ -304,7 +298,7 @@ export class Cuss2 {
 		return this.stateChange.getValue().current;
 	}
 
-	async _initialize(setupData?: { bagTagPrinter?: string | string[], boardingPassPrinter?: string | string[] }): Promise<any> {
+	async _initialize(requestUnavailable: boolean): Promise<any> {
 		log("info", "Getting Environment Information");
 		let level = await this.api.getEnvironment();
 		// hydrate device id if none provided
@@ -323,19 +317,9 @@ export class Cuss2 {
 			log("error",'error querying components', e)
 			this.onQueryError.next(e)
 		});
-		if (this.state === AppState.INITIALIZE && setupData.bagTagPrinter) {
-			await this.bagTagPrinter?.setupRaw(setupData.bagTagPrinter).catch(() => this.onBagTagPrinterInitSetup.next(PrinterSetupStatus.SETUP_FAILED));
-			this.onBagTagPrinterInitSetup.next(PrinterSetupStatus.SETUP_SUCCESS);
-		} else if (this.state !== AppState.INITIALIZE && setupData.bagTagPrinter) {
-			this.onBagTagPrinterInitSetup.next(PrinterSetupStatus.SETUP_MISSED);
+		if (requestUnavailable) {
+			await this.requestUnavailableState();
 		}
-		if (this.state === AppState.INITIALIZE && setupData.boardingPassPrinter) {
-			await this.boardingPassPrinter?.setupRaw(setupData.boardingPassPrinter).catch(() => this.onBoardingPassPrinterInitSetup.next(PrinterSetupStatus.SETUP_FAILED));
-			this.onBoardingPassPrinterInitSetup.next(PrinterSetupStatus.SETUP_SUCCESS);
-		} else if (this.state !== AppState.INITIALIZE && setupData.boardingPassPrinter) {
-			this.onBoardingPassPrinterInitSetup.next(PrinterSetupStatus.SETUP_MISSED);
-		}
-		await this.requestUnavailableState();
 	}
 
 	async _handleWebSocketMessage(event) {
