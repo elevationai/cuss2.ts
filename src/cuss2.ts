@@ -88,6 +88,9 @@ function validateComponentId(componentID:any) {
  * @property {BehaviorSubject<Component|null>} stateChange - The state change subject that emits when the application state changes.
  * @property {BehaviorSubject<any>} componentStateChange - The component change subject emits when a component's state changes.
  * @property {Subject<PlatformData>} onmessage - The onmessage subject for unsolicited and solicited events. *Note* see IATA docs for more details.
+ * @property {Subject<MessageCodes>} onSessionTimeout - The onSessionTimeout subject emits when the platform issues a session timeout message, indicating an application has been active for too long.
+ * @property {boolean} requestUnavailableAfterInitialize - If true (default if not provided) request to change the application state to UNAVAILABLE state after initialization process.
+ * If false, the application state will remain in INITIALIZE state and it's up to the application to request to move to UNAVAILABLE after doing additional initialization steps (i.e. setup pectabs on printers, check mandatory device status...).
  * @property {BagTagPrinter} bagTagPrinter - The bag tag printer component class to interact with the device.
  * @property {BoardingPassPrinter} boardingPassPrinter - The boarding pass printer component class to interact with the device.
  * @property {DocumentReader} documentReader - The document reader component class to interact with the device.
@@ -194,10 +197,13 @@ export class Cuss2 {
 	 * @param {string} deviceID - The GUID for the device connecting to the CUSS 2 platform
 	 * @param {string} client_id  - The client_id of the CUSS 2 platform
 	 * @param {string} client_secret  - The client_secret of the CUSS 2 platform
-	 * @param {boolean}	requestUnavailable - Request the platform to change the application state to Unavailable state after initialization.
+	 * @param {boolean}	requestUnavailable - If true (default if not provided) request to change the application state to UNAVAILABLE state after initialization process.
+   * If false, the application state will remain in INITIALIZE state and it's up to the application to request to move to UNAVAILABLE after doing additional initialization steps (i.e. setup pectabs on printers, check mandatory device status...).
 	 * @returns {Promise<Cuss2>} A promise that resolves to a Cuss2 object
 	 * @example
-	 * const connect = await Cuss2.connect('url', 'oauth', '00000000-0000-0000-0000-000000000000', 'client_id', 'client_secret');
+	 * const connect = await Cuss2.connect('url', 'oauth', '00000000-0000-0000-0000-000000000000', 'client_id', 'client_secret'); // If the requestUnavailable is not provided, it defaults to true and the library will handle moving the application to the UNAVAILABLE state after a simple initialization process.
+	 * // Alternatively an application can pass false to the requestUnavailable parameter and handle moving the application to the UNAVAILABLE state manually after taking additional initialization steps.
+	 * const connect = await Cuss2.connect('url', 'oauth, '00000000-0000-0000-0000-000000000000', 'client_id', 'client_secret', false);
 	 *
 	 */
 	static async connect(wss: string, oauth: string = null, deviceID: string = '00000000-0000-0000-0000-000000000000', client_id: string, client_secret: string, requestUnavailable = true): Promise<Cuss2> {
