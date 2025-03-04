@@ -46,6 +46,9 @@ export class Connection extends EventEmitter {
 			redirect: 'follow',
 			body: JSON.stringify({ client_id, client_secret, grant_type:'client_credentials'  }) // body data type must match "Content-Type" header
 		})
+		if (response.status === 401) {
+			throw { message: 'Invalid Credentials', status: 401 }
+		}
 		return response.json()
 	}
 
@@ -66,6 +69,9 @@ export class Connection extends EventEmitter {
 		let delay = .5
 		function go() {
 			return connection._connect().catch(async (err) => {
+				if (err.status === 401 || err.message.match(/credentials/i)) {
+					throw err
+				}
 				log('info', 'Websocket connection failed: ' + err.message, err)
 				delay *= 2
 				log('info', `Retrying Websocket connection in ${delay} seconds`)
