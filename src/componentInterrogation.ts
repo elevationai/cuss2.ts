@@ -80,7 +80,7 @@ export class ComponentInterrogation {
 	static isKeypad = (component:EnvironmentComponent) => {
 		const charac0 = component.componentCharacteristics?.[0];
 		if (!charac0) return;
-		return dsTypesHas(charac0, CUSSDataTypes.KEY) && dsTypesHas(charac0, CUSSDataTypes.KEYUP) && dsTypesHas(charac0, CUSSDataTypes.KEYDOWN);
+		return dsTypesHas(charac0, CUSSDataTypes.KEY) || dsTypesHas(charac0, CUSSDataTypes.KEYUP) || dsTypesHas(charac0, CUSSDataTypes.KEYDOWN);
 	}
 
 	static isIllumination = (component:EnvironmentComponent) => {
