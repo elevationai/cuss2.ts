@@ -34,23 +34,28 @@ export class Connection extends EventEmitter {
 	 * const token = await Connection.authorize('url', 'my-client-id', 'my-client-secret');
 	 */
 	static async authorize(url, client_id, client_secret) {
-		log('info', `Authorizing client '${client_id}'`, url)
-
+		log('info', `Authorizing client '${client_id}'`, url);
+	
+		const params = new URLSearchParams();
+		params.append('client_id', client_id);
+		params.append('client_secret', client_secret);
+		params.append('grant_type', 'client_credentials');
+	
 		const response = await fetch(url, {
 			method: 'POST',
-			// mode: 'cors', // no-cors, *cors, same-origin
-			// credentials: 'same-origin',
 			headers: {
-				'Content-Type': 'application/json'
+				'Content-Type': 'application/x-www-form-urlencoded'
 			},
 			redirect: 'follow',
-			body: JSON.stringify({ client_id, client_secret, grant_type:'client_credentials'  }) // body data type must match "Content-Type" header
-		})
+			body: params.toString() // Form-encoded data
+		});
+	
 		if (response.status === 401) {
-			throw { message: 'Invalid Credentials', status: 401 }
+			throw { message: 'Invalid Credentials', status: 401 };
 		}
-		return response.json()
+		return response.json();
 	}
+	
 
 	/**
 	 * Connects to a CUSS Platform at the provided URL
