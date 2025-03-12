@@ -368,12 +368,10 @@ export class CardReader extends DataReaderComponent {
 	 * CardReader.enablePayment(true);
 	 */
 	async enablePayment(yes: boolean) {
-		await this.setup({
-			dataRecords: [{
+		await this.setup([{
 				data: '',
 				dsTypes: [yes ? 'DS_TYPES_PAYMENT_ISO' as CUSSDataTypes : CUSSDataTypes.FOIDISO]
-			}]
-		});
+			}]);
 	}
 
 	/**
