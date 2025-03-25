@@ -27,4 +27,5 @@ export const DeviceType = {
 	VERIFICATION_BELT: 'VERIFICATION_BELT' as DeviceType,
 	PARKING_BELT: 'PARKING_BELT' as DeviceType,
 	RFID: 'RFID' as DeviceType,
+	AEA_SBD: 'AEA_SBD' as DeviceType,
 };

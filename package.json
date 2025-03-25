@@ -14,7 +14,7 @@
     "predoc": "rm -rf docs/"
   },
   "dependencies": {
-    "cuss2-typescript-models": "1.0.2",
+    "cuss2-typescript-models": "1.0.3",
     "events": "^3.3.0",
     "rxjs": "^7.5.2",
     "uuid": "^9.0.0"
