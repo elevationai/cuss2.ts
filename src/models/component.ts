@@ -418,6 +418,15 @@ export class Camera extends DataReaderComponent {
 	}
 }
 
+export class SBDAEA extends Component {
+
+	// send AEA command to query sbd
+
+	// Listen for unsolicited events for baggage status
+
+	// transform them to cuss2 SBD models
+}
+
 /**
  * @class A component that prints.
  * @extends Component

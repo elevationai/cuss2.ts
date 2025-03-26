@@ -143,14 +143,14 @@ export class ComponentInterrogation {
 		return component.componentType == ComponentTypes.PARKINGBELT
 	}
 
-	static AEASBD = (component: EnvironmentComponent): boolean => {
+	static isAEASBD = (component: EnvironmentComponent): boolean => {
 		if (component.componentType != ComponentTypes.USEROUTPUT) return;
 		const charac0 = component.componentCharacteristics?.[0];
 		if (!charac0) return;
 		return !!dsTypesHas(charac0, CUSSDataTypes.SBDAEA);
 	}
 
-	static BHS = (component: EnvironmentComponent): boolean => {
+	static isBHS = (component: EnvironmentComponent): boolean => {
 		if (component.componentType != ComponentTypes.DATAOUTPUT) return;
 		const charac0 = component.componentCharacteristics?.[0];
 		if (!charac0) return;
