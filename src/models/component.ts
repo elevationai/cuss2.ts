@@ -1,5 +1,6 @@
 import { BehaviorSubject, combineLatest, Subject } from "rxjs";
-import { Cuss2, helpers } from "../cuss2.js";
+import { Cuss2 } from "../cuss2.js";
+import { helpers } from "../helper.js";
 import {
 	DataRecordList,
 	CUSSDataTypes,
@@ -411,6 +412,25 @@ export class RFID extends DataReaderComponent {
 }
 
 export class Camera extends DataReaderComponent {
+	constructor(component: EnvironmentComponent, cuss2: Cuss2) {
+		super(component, cuss2, DeviceType.CAMERA);
+	}
+}
+
+export class AEASBD extends Component {
+
+	constructor(component: EnvironmentComponent, cuss2: Cuss2) {
+		super(component, cuss2, DeviceType.AEASBD);
+	}
+
+	// send AEA command to query sbd
+
+	// Listen for unsolicited events for baggage status
+
+	// transform them to cuss2 SBD models
+}
+
+export class BHS extends DataReaderComponent {
 	constructor(component: EnvironmentComponent, cuss2: Cuss2) {
 		super(component, cuss2, DeviceType.CAMERA);
 	}

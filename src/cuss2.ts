@@ -33,7 +33,9 @@ import {
 	InsertionBelt,
 	VerificationBelt,
 	ParkingBelt,
-	RFID
+	RFID,
+	BHS,
+	AEASBD
 } from "./models/component.js";
 
 import {
@@ -66,7 +68,8 @@ const {
 	isBiometric,
 	isKeypad, isIllumination, isHeadset,
 	isScale, isCamera, isInsertionBelt,
-	isParkingBelt, isRFIDReader, isVerificationBelt
+	isParkingBelt, isRFIDReader, isVerificationBelt,
+	isAEASBD, isBHS
 } = ComponentInterrogation;
 
 /**
@@ -288,6 +291,8 @@ export class Cuss2 {
 	rfid?: RFID;
 	headset?:Headset;
 	camera?: Camera;
+	bhs?: BHS;
+	aeasbd?: AEASBD;
 	activated: Subject<ApplicationActivation> = new Subject<ApplicationActivation>();
 	deactivated: Subject<AppState> = new Subject<AppState>();
 	pendingStateChange?: AppState;
@@ -455,6 +460,8 @@ export class Cuss2 {
 				else if (isVerificationBelt(component)) instance = this.verificationBelt = new VerificationBelt(component, this);
 				else if (isParkingBelt(component)) instance = this.parkingBelt = new ParkingBelt(component, this);
 				else if (isRFIDReader(component)) instance = this.rfid = new RFID(component, this);
+				else if (isBHS(component)) instance = this.bhs = new BHS(component, this);
+				else if (isAEASBD(component)) instance = this.aeasbd = new AEASBD(component, this);
 				// subcomponents
 				else if (isFeeder(component))  return; // instance = new Feeder(component, this);
 				else if (isDispenser(component))  return; // instance = new Dispenser(component, this);
@@ -834,8 +841,3 @@ export class Cuss2 {
 		this.checkRequiredComponentsAndSyncState();
 	}
 }
-
-export {Connection} from "./connection.js";
-export * from "cuss2-typescript-models";
-export * from "./helper.js";
-export * from "./componentInterrogation.js";

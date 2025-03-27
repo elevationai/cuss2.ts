@@ -142,4 +142,18 @@ export class ComponentInterrogation {
 		if (!charac0) return;
 		return component.componentType == ComponentTypes.PARKINGBELT
 	}
+
+	static isAEASBD = (component: EnvironmentComponent): boolean => {
+		if (component.componentType != ComponentTypes.USEROUTPUT) return;
+		const charac0 = component.componentCharacteristics?.[0];
+		if (!charac0) return;
+		return !!dsTypesHas(charac0, CUSSDataTypes.SBDAEA);
+	}
+
+	static isBHS = (component: EnvironmentComponent): boolean => {
+		if (component.componentType != ComponentTypes.DATAOUTPUT) return;
+		const charac0 = component.componentCharacteristics?.[0];
+		if (!charac0) return;
+		return !!dsTypesHas(charac0, CUSSDataTypes.RP1745);
+	}
 }
