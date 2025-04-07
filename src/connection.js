@@ -8,7 +8,6 @@
 */
 
 import {EventEmitter} from 'events'
-import {ApplicationData} from "cuss2-typescript-models"
 import {helpers} from "./helper.js";
 import {PlatformResponseError} from "./models/platformResponseError.js";
 // if (typeof WebSocket === 'undefined') {
