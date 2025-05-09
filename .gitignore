@@ -42,3 +42,8 @@ dist/**/*
 yarn.lock
 
 .codesandbox
+
+# Deno specific
+.deno_dir/
+deno.lock
+**/.claude/settings.local.json
