@@ -1,6 +1,6 @@
 {
   "tasks": {
-    "build": "deno run --allow-read --allow-write --allow-env scripts/build.ts",
+    "build": "deno run --allow-read --allow-write --allow-env --allow-run scripts/build.ts",
     "test": "deno test --allow-net --allow-read"
   },
   "compilerOptions": {
@@ -8,8 +8,6 @@
     "strict": true
   },
   "imports": {
-    "rxjs": "npm:rxjs@7.8.2",
-    "rxjs/operators": "npm:rxjs@7.8.2/operators",
     "uuid": "npm:uuid@9.0.0",
     "cuss2-typescript-models": "npm:cuss2-typescript-models@1.0.6"
   }

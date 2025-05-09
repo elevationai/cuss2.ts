@@ -22,8 +22,8 @@ await cuss2.boardingPassPrinter.query();
 // Enable a component
 await cuss2.barcodeReader.enable();
 
-// Subscribe to events
-cuss2.barcodeReader.data.asObservable().subscribe(data => {
+// Listen for barcode data events
+cuss2.barcodeReader.on('data', data => {
   console.log('Barcode scanned:', data);
 });
 
@@ -55,7 +55,7 @@ await cuss2.requestActiveState();
 
 ## State Transitions
 
-One of the most important aspect in a CUSS platform, is the ability to transition between application states correctly, that is why we tried to simplify all different aspect of the transitions through a simple rxjs subscription.
+One of the most important aspects in a CUSS platform is the ability to transition between application states correctly. The library provides simple event-based mechanisms to handle these transitions.
 
 ```mermaid
 sequenceDiagram
@@ -80,14 +80,14 @@ if (cuss2?.boardingPassPrinter) {
   await cuss2.requestAvailableState();
 }
 
-// Subscribe to active state
-cuss2.activated.subscribe(() => {
+// Listen for activation events
+cuss2._stateChangeEmitter.on('activated', () => {
   console.log('Application is active');
 });
 
-// Subscribe when application goes from active to available
-cuss2.deactivated.subscribe(() => {
-  console.log('Application is not longer active');
+// Listen for deactivation events
+cuss2._stateChangeEmitter.on('deactivated', () => {
+  console.log('Application is no longer active');
 });
 ```
 
@@ -148,8 +148,8 @@ const cuss2 = await Cuss2.connect(cuss2URL, oauthURL, deviceID, clientId, client
   // Enable component
   await cuss2.barcodeReader.enable();
 
-  // Subscribe to MEDIA_PRESENT
-  cuss2.barcodeReader.data.asObservable().subscribe((data) => {
+  // Listen for barcode data events
+  cuss2.barcodeReader.on('data', (data) => {
     console.log(`Barcode Data ${data}`);
 
     // Disable component

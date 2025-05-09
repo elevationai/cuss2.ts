@@ -1,4 +1,4 @@
-import {Subject} from "rxjs";
+import { EventEmitter } from 'node:events';
 import * as uuid from "uuid";
 import {
   ApplicationData,
@@ -20,11 +20,11 @@ export class LogMessage {
     this.data = data;
   }
 }
-export class Logger extends Subject<LogMessage> {}
+export class Logger extends EventEmitter {}
 
 export const logger = new Logger();
 export const log = (level:string, action:string, data?:any) => {
-  logger.next(new LogMessage(level, action, data));
+  logger.emit("log", new LogMessage(level, action, data));
 };
 
 export const helpers = {

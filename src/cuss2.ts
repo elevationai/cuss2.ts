@@ -1,10 +1,9 @@
-import { log, logger, Build } from "./helper.ts";
-import {BehaviorSubject, Subject} from "rxjs";
+import { log, Build } from "./helper.ts";
+import { EventEmitter } from 'node:events';
 
 import {Connection} from "./connection.ts";
 import {StateChange} from "./models/stateChange.ts";
 import {ComponentInterrogation} from "./componentInterrogation.ts";
-import { ApplicationActivationExecutionModeEnum, ApplicationStateCodes, EnvironmentComponent } from 'cuss2-typescript-models';
 import {
   Announcement,
   BarcodeReader,
@@ -30,8 +29,7 @@ import {
 } from "./models/component.ts";
 
 import {
-  ApplicationActivation,
-  // ApplicationState,
+	ApplicationActivationExecutionModeEnum,
   MessageCodes,
   CUSSDataTypes,
   ComponentList,
@@ -42,8 +40,6 @@ import {
   ApplicationStateCodes as AppState,
   ApplicationStateChangeReasonCodes as ChangeReason
 } from "cuss2-typescript-models";
-
-export { ApplicationStateCodes, DataRecordList };
 
 const ExecutionModeEnum = ApplicationActivationExecutionModeEnum
 
@@ -79,10 +75,7 @@ function validateComponentId(componentID:any) {
  * @property {connection} connection - The connection object used to communicate with the cuss platform.
  * @property {EnvironmentLevel} environmentLevel - The environment level of the cuss platform. *Note* see IATA docs for more details.
  * @property {any | undefined} components - The components of the cuss platform.
- * @property {BehaviorSubject<Component|null>} stateChange - The state change subject that emits when the application state changes.
- * @property {BehaviorSubject<any>} componentStateChange - The component change subject emits when a component's state changes.
- * @property {Subject<PlatformData>} onmessage - The onmessage subject for unsolicited and solicited events. *Note* see IATA docs for more details.
- * @property {Subject<MessageCodes>} onSessionTimeout - The onSessionTimeout subject emits when the platform issues a session timeout message, indicating an application has been active for too long.
+ * @property {EventEmitter} _stateChangeEmitter - The event emitter that handles all state changes and events.
  * @property {boolean} requestUnavailableAfterInitialize - If true (default if not provided) request to change the application state to UNAVAILABLE state after initialization process.
  * If false, the application state will remain in INITIALIZE state and it's up to the application to request to move to UNAVAILABLE after doing additional initialization steps (i.e. setup pectabs on printers, check mandatory device status...).
  * @property {BagTagPrinter} bagTagPrinter - The bag tag printer component class to interact with the device.
@@ -92,13 +85,10 @@ function validateComponentId(componentID:any) {
  * @property {Announcement} announcement - The announcement component class to interact with the device.
  * @property {Keypad} keypad - The keypad component class to interact with the device.
  * @property {CardReader} cardReader - The card reader component class to interact with the device.
- * @property {Subject<undefined>} activated - The activated subject will emit when the application moves to the active state.
- * @property {Subject<AppState>} deactivated - The deactivated subject emits when the application is moved from the active state. *Note* see IATA docs for more details. AppState is an alias for ApplicationStateCodeEnum.
  * @property {AppState} pendingStateChange - The  application pending state change. *Note* see IATA docs for more details.
  * @property {boolean} multiTenant - The multi tenant flag.
  * @property {boolean} accessibleMode - The accessible mode flag.
  * @property {string} language - The language.
- * @property {Subject<unknown>} onQueryError - The onQueryError subject emits when there is an error in caught from the queryComponents method.
  */
 export class Cuss2 {
 
@@ -123,15 +113,15 @@ export class Cuss2 {
     // Check if we're in a browser environment
     const isBrowser = typeof globalThis.document !== 'undefined';
 
-    if (isBrowser) {
-      document.body.setAttribute('elevated-cuss2', '1');
-
-      function broadcast(detail: any) {
-        const event = new CustomEvent('send_to_cuss2_devtools', {detail});
-        window.dispatchEvent(event);
-      }
-      logger.subscribe(broadcast);
-    }
+    // if (isBrowser) {
+    //   document.body.setAttribute('elevated-cuss2', '1');
+		//
+    //   function broadcast(detail: any) {
+    //     const event = new CustomEvent('send_to_cuss2_devtools', {detail});
+    //     window.dispatchEvent(event);
+    //   }
+    //   logger.on("log", broadcast);
+    // }
 
     const connection = await Connection.connect(wss, oauth, deviceID, client_id, client_secret);
     const cuss2 = new Cuss2(connection);
@@ -187,10 +177,12 @@ export class Cuss2 {
   connection:Connection;
   environment: EnvironmentLevel = {} as EnvironmentLevel;
   components: any|undefined = undefined;
-  stateChange: BehaviorSubject<StateChange> = new BehaviorSubject<StateChange>(new StateChange(AppState.STOPPED, AppState.STOPPED));
-  componentStateChange: BehaviorSubject<Component|null> = new BehaviorSubject<Component|null>(null);
-  onmessage: Subject<PlatformData> = new Subject<PlatformData>();
-  onSessionTimeout: Subject<MessageCodes> = new Subject<MessageCodes>();
+
+  // State management with EventEmitter
+  private _stateChangeEmitter = new EventEmitter();
+  private _currentState: StateChange = new StateChange(AppState.STOPPED, AppState.STOPPED);
+  private _currentComponent: Component|null = null;
+
   requestUnavailableAfterInitialize: boolean = true;
 
   bagTagPrinter?: BagTagPrinter;
@@ -211,20 +203,18 @@ export class Cuss2 {
   camera?: Camera;
   bhs?: BHS;
   aeasbd?: AEASBD;
-  activated: Subject<ApplicationActivation> = new Subject<ApplicationActivation>();
-  deactivated: Subject<AppState> = new Subject<AppState>();
+
   pendingStateChange?: AppState;
   multiTenant?: boolean;
   accessibleMode: boolean = false;
   language?: string;
-  onQueryError: Subject<unknown> = new Subject<unknown>();
 
   /**
   * @typeof {StateChange.current} state Get the current application state from the CUSS 2 platform
   * @returns {AppState} The current application state
   */
   get state() {
-    return this.stateChange.getValue().current;
+    return this._currentState.current;
   }
 
   async _initialize(requestUnavailable: boolean): Promise<any> {
@@ -244,7 +234,7 @@ export class Cuss2 {
     await this.api.getComponents();
     await this.queryComponents().catch((e) => {
       log("error",'error querying components', e)
-      this.onQueryError.next(e)
+      this._stateChangeEmitter.emit('queryError', e);
     });
     if (requestUnavailable) {
       await this.requestUnavailableState();
@@ -263,7 +253,7 @@ export class Cuss2 {
     let currentState:any = meta.currentApplicationState.applicationStateCode;
 
     if (meta.messageCode === MessageCodes.SESSIONTIMEOUT) {
-      this.onSessionTimeout.next(meta.messageCode);
+      this._stateChangeEmitter.emit('sessionTimeout', meta.messageCode);
     }
 
     if(!currentState) {
@@ -273,12 +263,15 @@ export class Cuss2 {
     if(currentState !== this.state) {
       const prevState = this.state;
       log('verbose', `[state changed] old:${prevState} new:${currentState}`);
-      this.stateChange.next(new StateChange(prevState, currentState as AppState));
+
+      // Update current state and emit event
+      this._currentState = new StateChange(prevState, currentState as AppState);
+      this._stateChangeEmitter.emit('stateChange', this._currentState);
 
       if (currentState === AppState.UNAVAILABLE) {
         await this.queryComponents().catch((e) => {
           log("error",'error querying components', e)
-          this.onQueryError.next(e)
+          this._stateChangeEmitter.emit('queryError', e);
         });
         if (this._online) {
           this.checkRequiredComponentsAndSyncState();
@@ -286,14 +279,13 @@ export class Cuss2 {
       }
       else if (currentState === AppState.ACTIVE) {
         if (!payload.applicationActivation)
-          //throw new Error('ApplicationActivation missing')
         this.multiTenant = payload?.applicationActivation?.executionMode === ExecutionModeEnum.MAM;
         this.accessibleMode = payload?.applicationActivation?.accessibleMode || false;
         this.language = payload?.applicationActivation?.languageID || 'en-US';
-        this.activated.next(payload?.applicationActivation);
+        this._stateChangeEmitter.emit('activated', payload?.applicationActivation);
       }
       if (prevState === AppState.ACTIVE) {
-        this.deactivated.next(currentState as AppState);
+        this._stateChangeEmitter.emit('deactivated', currentState as AppState);
       }
     }
 
@@ -301,7 +293,11 @@ export class Cuss2 {
       const component = this.components[meta.componentID];
       if (component && component.stateIsDifferent(message)) {
         component.updateState(message);
-        this.componentStateChange.next(component);
+
+        // Update current component and emit event
+        this._currentComponent = component;
+        this._stateChangeEmitter.emit('componentStateChange', component);
+
         if (this._online && (unsolicited || meta.platformDirective === PlatformDirectives.PeripheralsQuery)) {
           this.checkRequiredComponentsAndSyncState();
         }
@@ -310,7 +306,8 @@ export class Cuss2 {
 
     log('verbose', "[socket.onmessage]", message);
 
-    this.onmessage.next(message)
+    // Emit platform message
+    this._stateChangeEmitter.emit('message', message);
   }
 
   api = {

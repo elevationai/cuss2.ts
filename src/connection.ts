@@ -1,4 +1,4 @@
-import { EventEmitter } from "https://deno.land/std/node/events.ts";
+import { EventEmitter } from 'node:events';
 import { helpers } from "./helper.ts";
 import { PlatformResponseError } from "./models/platformResponseError.ts";
 import type { ApplicationData } from "cuss2-typescript-models";

@@ -26,13 +26,21 @@ async function main() {
     
     console.log("Connected successfully!");
     
-    // Subscribe to state changes
-    cuss2.stateChange.subscribe(stateChange => {
+    // Listen for state changes
+    // First call immediately with current state
+    console.log(`Current state: ${cuss2._currentState.current}`);
+    // Then listen for future changes
+    cuss2._stateChangeEmitter.on('stateChange', stateChange => {
       console.log(`State changed from ${stateChange.previous} to ${stateChange.current}`);
     });
     
-    // Subscribe to component state changes
-    cuss2.componentStateChange.subscribe(component => {
+    // Listen for component state changes
+    // First call with current component if available
+    if (cuss2._currentComponent) {
+      console.log(`Current component ID ${cuss2._currentComponent.id} state: ${cuss2._currentComponent.status}`);
+    }
+    // Then listen for future changes
+    cuss2._stateChangeEmitter.on('componentStateChange', component => {
       if (component) {
         console.log(`Component ID ${component.id} state changed to ${component.status}`);
       }
@@ -52,7 +60,8 @@ async function main() {
         await cuss2.barcodeReader.enable();
         
         console.log("Listening for barcode scans...");
-        cuss2.barcodeReader.data.subscribe(data => {
+        // Listen for barcode data events
+        cuss2.barcodeReader.on('data', data => {
           console.log("Barcode scanned:", data);
           
           // Disable the barcode reader after a scan

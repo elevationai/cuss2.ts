@@ -1,4 +1,3 @@
-import { MessageCodes } from 'cuss2-typescript-models';
 import {
   ComponentCharacteristics,
   ComponentTypes,
@@ -7,8 +6,6 @@ import {
   EnvironmentComponent,
   MediaTypes
 } from "cuss2-typescript-models";
-
-export { EnvironmentComponent, MediaTypes };
 
 const dsTypesHas = (charac0:ComponentCharacteristics, type: CUSSDataTypes) => {
   return charac0?.dsTypesList?.find((d) => d === type);
@@ -109,42 +106,42 @@ export class ComponentInterrogation {
   }
 
   static isRFIDReader = (component: EnvironmentComponent): boolean => {
-    if (component.componentType !== ComponentTypes.DATAINPUT) return;
+    if (component.componentType !== ComponentTypes.DATAINPUT) return false;
     const charac0 = component.componentCharacteristics?.[0];
-    if (!charac0) return;
+    if (!charac0) return false;
     const mediaTypes = charac0.mediaTypesList;
     return !!deviceTypesHas(charac0.deviceTypesList, DeviceTypes.CONTACTLESS) && !!mediaTypesHas(mediaTypes, MediaTypes.RFID);
   }
 
   static isInsertionBelt = (component: EnvironmentComponent): boolean => {
     const charac0 = component.componentCharacteristics?.[0];
-    if (!charac0) return;
+    if (!charac0) return false;
     return component.componentType == ComponentTypes.INSERTIONBELT;
   }
 
   static isVerificationBelt = (component: EnvironmentComponent): boolean => {
     const charac0 = component.componentCharacteristics?.[0];
-    if (!charac0) return;
+    if (!charac0) return false;
     return component.componentType == ComponentTypes.VERIFICATIONBELT;
   }
 
   static isParkingBelt = (component: EnvironmentComponent): boolean => {
     const charac0 = component.componentCharacteristics?.[0];
-    if (!charac0) return;
+    if (!charac0) return false;
     return component.componentType == ComponentTypes.PARKINGBELT
   }
 
   static isAEASBD = (component: EnvironmentComponent): boolean => {
-    if (component.componentType != ComponentTypes.USEROUTPUT) return;
+    if (component.componentType != ComponentTypes.USEROUTPUT) return false;
     const charac0 = component.componentCharacteristics?.[0];
-    if (!charac0) return;
+    if (!charac0) return false;
     return !!dsTypesHas(charac0, CUSSDataTypes.SBDAEA);
   }
 
   static isBHS = (component: EnvironmentComponent): boolean => {
-    if (component.componentType != ComponentTypes.DATAOUTPUT) return;
+    if (component.componentType != ComponentTypes.DATAOUTPUT) return false;
     const charac0 = component.componentCharacteristics?.[0];
-    if (!charac0) return;
+    if (!charac0) return false;
     return !!dsTypesHas(charac0, CUSSDataTypes.RP1745);
   }
 }
