@@ -1,12 +1,3 @@
-/*
-==============================================================================
- Project: CUSS2.js
- Company: VisionBox
- License: MIT License
- Last Updated: 2024-09-26
-==============================================================================
-*/
-
 // Main entry point for Deno
 export * from "cuss2-typescript-models";
 export * from './src/cuss2.ts';

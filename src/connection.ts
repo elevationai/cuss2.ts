@@ -1,12 +1,3 @@
-/*
-==============================================================================
- Project: CUSS2.js
- Company: VisionBox
- License: MIT License
- Last Updated: 2024-09-26
-==============================================================================
-*/
-
 import { EventEmitter } from "https://deno.land/std/node/events.ts";
 import { helpers } from "./helper.ts";
 import { PlatformResponseError } from "./models/platformResponseError.ts";
@@ -31,12 +22,12 @@ export class Connection extends EventEmitter {
    */
   static async authorize(url: string, client_id: string, client_secret: string) {
     log('info', `Authorizing client '${client_id}'`, url);
-  
+
     const params = new URLSearchParams();
     params.append('client_id', client_id);
     params.append('client_secret', client_secret);
     params.append('grant_type', 'client_credentials');
-  
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -45,7 +36,7 @@ export class Connection extends EventEmitter {
       redirect: 'follow',
       body: params.toString() // Form-encoded data
     });
-  
+
     if (response.status === 401) {
       throw { message: 'Invalid Credentials', status: 401 };
     }
@@ -174,7 +165,7 @@ export class Connection extends EventEmitter {
         if (data.meta?.requestID) {
           this.emit(data.meta.requestID, data)
         }
-        
+
       }
       socket.onclose = (e) => {
         log('Websocket Close:', e.reason)

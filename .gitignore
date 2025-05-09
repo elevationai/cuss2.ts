@@ -47,3 +47,5 @@ yarn.lock
 .deno_dir/
 deno.lock
 **/.claude/settings.local.json
+
+**/CLAUDE.local.md

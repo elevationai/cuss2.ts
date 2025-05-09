@@ -1,12 +1,3 @@
-/*
-==============================================================================
- Project: CUSS2.js
- Company: VisionBox
- License: MIT License
- Last Updated: 2024-09-26
-==============================================================================
-*/
-
 import { log, logger, Build } from "./helper.ts";
 import {BehaviorSubject, Subject} from "rxjs";
 
@@ -131,10 +122,10 @@ export class Cuss2 {
   static async connect(wss: string, oauth: string = null, deviceID: string = '00000000-0000-0000-0000-000000000000', client_id: string, client_secret: string, requestUnavailable = true): Promise<Cuss2> {
     // Check if we're in a browser environment
     const isBrowser = typeof globalThis.document !== 'undefined';
-    
+
     if (isBrowser) {
       document.body.setAttribute('elevated-cuss2', '1');
-      
+
       function broadcast(detail: any) {
         const event = new CustomEvent('send_to_cuss2_devtools', {detail});
         window.dispatchEvent(event);
@@ -174,7 +165,7 @@ export class Cuss2 {
     await cuss2._initialize(requestUnavailable);
     return cuss2;
   }
-  
+
   static _get(cuss2: Cuss2, parts: String[]) {
     // @ts-ignore
     return parts.reduce((obj, prop) => obj && obj[prop], cuss2)
