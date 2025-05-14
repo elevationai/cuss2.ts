@@ -4,12 +4,13 @@
     "test": "deno test --allow-net --allow-read"
   },
   "compilerOptions": {
-    "lib": ["deno.ns", "dom"],
-    "strict": true
+    "strict": true,
+    "lib": ["deno.window", "deno.ns", "esnext"],
+    "checkJs": true
   },
   "imports": {
     "@types/node": "npm:@types/node@^22.15.17",
-    "uuid": "npm:uuid@9.0.0",
-    "cuss2-typescript-models": "npm:cuss2-typescript-models@1.0.6"
+    "cuss2-typescript-models": "npm:cuss2-typescript-models@1.0.6",
+    "events": "node:events"
   }
 }

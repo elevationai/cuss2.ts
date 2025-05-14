@@ -1,4 +1,4 @@
-import { EventEmitter } from "node:events";
+import { EventEmitter } from "events";
 import { helpers } from "./helper.ts";
 import { PlatformResponseError } from "./models/platformResponseError.ts";
 import { AuthenticationError } from "./models/Errors.ts";

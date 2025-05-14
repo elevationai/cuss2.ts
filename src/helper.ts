@@ -1,11 +1,15 @@
-import { EventEmitter } from "node:events";
-import * as uuid from "uuid";
+import { EventEmitter } from "events";
 import {
-  ApplicationData,
-  ApplicationDataMeta,
-  ApplicationDataPayload,
-  MessageCodes,
-  PlatformDirectives,
+	ApplicationData,
+	ApplicationDataMeta,
+	ApplicationDataPayload,
+	ApplicationState,
+	ApplicationTransfer, BaggageData, CommonUsePaymentMessage, CUSS2BiometricsDomainCommonUseBiometricMessage,
+	CUSS2IlluminationDomainIlluminationData,
+	DataRecordList,
+	MessageCodes,
+	PlatformDirectives,
+	ScreenResolution,
 } from "cuss2-typescript-models";
 
 export class LogMessage {
@@ -19,9 +23,8 @@ export class LogMessage {
     this.data = data;
   }
 }
-export class Logger extends EventEmitter {}
 
-export const logger = new Logger();
+export const logger = new EventEmitter();
 export const log = (level: string, action: string, data?: unknown) => {
   logger.emit("log", new LogMessage(level, action, data));
 };
@@ -92,90 +95,63 @@ const criticalErrors = [
   MessageCodes.BAGGAGEOVERFLOWTUB,
 ];
 
-interface DataRecordItem {
-  data: unknown;
-  [key: string]: unknown;
-}
-
-const isDataRecord = (dataRecordObject: unknown): boolean => {
-  if (Array.isArray(dataRecordObject) && dataRecordObject.length > 0) {
-    const first = dataRecordObject[0] as Record<string, unknown>;
-    if (Object.prototype.hasOwnProperty.call(first, "data")) {
-      return true;
-    }
-  }
-  return false;
+const isDataRecord = (dataRecordObject: unknown): dataRecordObject is DataRecordList => {
+  return Array.isArray(dataRecordObject) && dataRecordObject.length > 0 && 'data' in dataRecordObject[0];
 };
 
-interface ApplicationDataOptions {
+interface BuildOptions {
   componentID?: string;
-  token?: string;
   deviceID?: string;
-  dataObj?: Record<string, unknown>;
+  dataObj?: ApplicationState | ApplicationTransfer | DataRecordList | ScreenResolution
+		| CUSS2IlluminationDomainIlluminationData | BaggageData | CommonUsePaymentMessage
+		| CUSS2BiometricsDomainCommonUseBiometricMessage;
 }
 
 export const Build = {
   applicationData: (
     directive: PlatformDirectives,
-    options: ApplicationDataOptions = {},
+    options: BuildOptions = {},
   ) => {
     const {
       componentID,
-      token,
       deviceID = "00000000-0000-0000-0000-000000000000",
       dataObj,
     } = options;
     const meta = {} as ApplicationDataMeta;
-    meta.requestID = uuid.v4();
-    meta.oauthToken = token;
+    meta.requestID = crypto.randomUUID();
     meta.directive = directive;
     meta.componentID = componentID;
     meta.deviceID = deviceID;
 
-    const payload = {
-      applicationState: null,
-      applicationTransfer: null,
-      dataRecords: [],
-      screenResolution: null,
-      illuminationData: null,
-      bagdropData: null,
-      paymentData: null,
-      biometricData: null,
-    } as ApplicationDataPayload;
+    const payload = {} as ApplicationDataPayload;
 
-    if (
-      dataObj &&
-      Object.prototype.hasOwnProperty.call(dataObj, "applicationStateCode")
-    ) payload.applicationState = dataObj;
-    if (
-      dataObj &&
-      Object.prototype.hasOwnProperty.call(dataObj, "targetApplicationID")
-    ) payload.applicationTransfer = dataObj;
-    if (isDataRecord(dataObj)) payload.dataRecords = dataObj as unknown[];
-    if (dataObj && Object.prototype.hasOwnProperty.call(dataObj, "verticak")) {
+    if (dataObj && "applicationStateCode" in dataObj)
+			payload.applicationState = dataObj;
+
+    if (dataObj && "targetApplicationID" in dataObj)
+			payload.applicationTransfer = dataObj;
+
+    if (isDataRecord(dataObj))
+			payload.dataRecords = dataObj;
+
+    if (dataObj && "vertical" in dataObj)
       payload.screenResolution = dataObj;
-    }
-    if (
-      dataObj && Object.prototype.hasOwnProperty.call(dataObj, "lightColor")
-    ) payload.illuminationData = dataObj;
-    if (
-      dataObj &&
-      Object.prototype.hasOwnProperty.call(dataObj, "baggageMeasurements")
-    ) payload.bagdropData = dataObj;
-    if (
-      dataObj &&
-      Object.prototype.hasOwnProperty.call(dataObj, "ePaymentMessage")
-    ) payload.paymentData = dataObj;
-    if (
-      dataObj &&
-      Object.prototype.hasOwnProperty.call(dataObj, "biometricProviderMessage")
-    ) payload.biometricData = dataObj;
 
-    const ad = {} as ApplicationData;
-    ad.meta = meta;
-    ad.payload = payload;
-    return ad;
+    if (dataObj && "lightColor" in dataObj)
+			payload.illuminationData = dataObj;
+
+    if (dataObj && "baggageMeasurements" in dataObj)
+			payload.bagdropData = dataObj;
+
+    if (dataObj && "ePaymentMessage" in dataObj)
+			payload.paymentData = dataObj;
+
+    if (dataObj && "biometricProviderMessage" in dataObj)
+			payload.biometricData = dataObj;
+
+    return { meta, payload } as ApplicationData;
   },
+
   stateChange: (
     desiredState: string | number,
     reasonCode: string | number,
@@ -190,7 +166,7 @@ export const Build = {
           applicationStateChangeReasonCode: reasonCode,
           applicationStateChangeReason: reason,
           applicationBrand: brand,
-        },
+        } as ApplicationState,
       },
     );
   },
