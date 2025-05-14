@@ -1,6 +1,9 @@
 # CUSS2.ts for Deno
 
-This is a Deno-compatible port of the CUSS2.js TypeScript SDK for interacting with a CUSS (Common Use Self-Service) 2.0 platform. It facilitates developing applications for self-service check-in, self-tagging, and self bag-drop in the airline industry.
+This is a Deno-compatible port of the CUSS2.js TypeScript SDK for interacting
+with a CUSS (Common Use Self-Service) 2.0 platform. It facilitates developing
+applications for self-service check-in, self-tagging, and self bag-drop in the
+airline industry.
 
 ## Usage
 
@@ -9,11 +12,11 @@ import { Cuss2 } from "https://deno.land/x/cuss2/mod.ts";
 
 // Connect to the CUSS2 platform
 const cuss2 = await Cuss2.connect(
-  'wss://your-cuss-platform-url', 
-  'https://your-oauth-url', 
-  'your-device-id', 
-  'your-client-id', 
-  'your-client-secret'
+  "wss://your-cuss-platform-url",
+  "https://your-oauth-url",
+  "your-device-id",
+  "your-client-id",
+  "your-client-secret",
 );
 
 // Query a component
@@ -23,8 +26,8 @@ await cuss2.boardingPassPrinter.query();
 await cuss2.barcodeReader.enable();
 
 // Listen for barcode data events
-cuss2.barcodeReader.on('data', data => {
-  console.log('Barcode scanned:', data);
+cuss2.barcodeReader.on("data", (data) => {
+  console.log("Barcode scanned:", data);
 });
 
 // State transitions
@@ -45,7 +48,8 @@ await cuss2.requestActiveState();
    - Manages WebSocket lifecycle
    - Sends/receives messages to/from the platform
 
-3. **Component Model**: Provides interfaces for various CUSS2 peripheral devices:
+3. **Component Model**: Provides interfaces for various CUSS2 peripheral
+   devices:
    - BagTagPrinter
    - BoardingPassPrinter
    - BarcodeReader
@@ -55,7 +59,9 @@ await cuss2.requestActiveState();
 
 ## State Transitions
 
-One of the most important aspects in a CUSS platform is the ability to transition between application states correctly. The library provides simple event-based mechanisms to handle these transitions.
+One of the most important aspects in a CUSS platform is the ability to
+transition between application states correctly. The library provides simple
+event-based mechanisms to handle these transitions.
 
 ```mermaid
 sequenceDiagram
@@ -69,7 +75,13 @@ sequenceDiagram
 // CUSS Transitions
 
 // Instantiating a connection
-const cuss2 = await Cuss2.connect(cuss2URL, oauthURL, deviceID, clientId, clientSecret);
+const cuss2 = await Cuss2.connect(
+  cuss2URL,
+  oauthURL,
+  deviceID,
+  clientId,
+  clientSecret,
+);
 
 // Moving to unavailable
 await cuss2.requestUnavailableState();
@@ -81,18 +93,21 @@ if (cuss2?.boardingPassPrinter) {
 }
 
 // Listen for activation events
-cuss2._stateChangeEmitter.on('activated', () => {
-  console.log('Application is active');
+cuss2._stateChangeEmitter.on("activated", () => {
+  console.log("Application is active");
 });
 
 // Listen for deactivation events
-cuss2._stateChangeEmitter.on('deactivated', () => {
-  console.log('Application is no longer active');
+cuss2._stateChangeEmitter.on("deactivated", () => {
+  console.log("Application is no longer active");
 });
 ```
 
 ### Interacting with CUSS Devices
-The library provides a simple and intuitive interface to interact with common CUSS devices, that enable developer to develop complex platform interactions without any unnecessary boilerplate.
+
+The library provides a simple and intuitive interface to interact with common
+CUSS devices, that enable developer to develop complex platform interactions
+without any unnecessary boilerplate.
 
 ```mermaid
 sequenceDiagram
@@ -136,26 +151,32 @@ const cuss2 = await Cuss2.connect(cuss2URL, oauthURL, deviceID, clientId, client
 #### Media Input
 
 ```ts
-const cuss2 = await Cuss2.connect(cuss2URL, oauthURL, deviceID, clientId, clientSecret);
+const cuss2 = await Cuss2.connect(
+  cuss2URL,
+  oauthURL,
+  deviceID,
+  clientId,
+  clientSecret,
+);
 
 // query component
- const res = await cuss2?.barcodeReader.query();
+const res = await cuss2?.barcodeReader.query();
 
- // validate component state
- if (res.meta.componentState !== ComponentState.READY) {
-    console.log('Component is not ready')
- } else {
+// validate component state
+if (res.meta.componentState !== ComponentState.READY) {
+  console.log("Component is not ready");
+} else {
   // Enable component
   await cuss2.barcodeReader.enable();
 
   // Listen for barcode data events
-  cuss2.barcodeReader.on('data', (data) => {
+  cuss2.barcodeReader.on("data", (data) => {
     console.log(`Barcode Data ${data}`);
 
     // Disable component
     cuss2.barcodeReader.disable();
   });
- }
+}
 ```
 
 ## License

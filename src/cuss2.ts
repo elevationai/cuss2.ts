@@ -1,47 +1,47 @@
-import { log, Build } from "./helper.ts";
-import { EventEmitter } from 'node:events';
+import { Build, log } from "./helper.ts";
+import { EventEmitter } from "node:events";
 
-import {Connection} from "./connection.ts";
-import {StateChange} from "./models/stateChange.ts";
-import {ComponentInterrogation} from "./componentInterrogation.ts";
+import { Connection } from "./connection.ts";
+import { StateChange } from "./models/stateChange.ts";
+import { ComponentInterrogation } from "./componentInterrogation.ts";
 import {
+  AEASBD,
   Announcement,
+  BagTagPrinter,
   BarcodeReader,
+  BHS,
+  Biometric,
+  BoardingPassPrinter,
+  Camera,
+  CardReader,
   Component,
   Dispenser,
   DocumentReader,
   Feeder,
-  Keypad,
-  CardReader,
-  BagTagPrinter,
-  BoardingPassPrinter,
-  Illumination,
   Headset,
-  Biometric,
-  Scale,
-  Camera,
+  Illumination,
   InsertionBelt,
-  VerificationBelt,
+  Keypad,
   ParkingBelt,
   RFID,
-  BHS,
-  AEASBD
+  Scale,
+  VerificationBelt,
 } from "./models/component.ts";
 
 import {
-	ApplicationActivationExecutionModeEnum,
-  MessageCodes,
-  CUSSDataTypes,
+  ApplicationActivationExecutionModeEnum,
+  ApplicationStateChangeReasonCodes as ChangeReason,
+  ApplicationStateCodes as AppState,
   ComponentList,
+  CUSSDataTypes,
   DataRecordList,
   EnvironmentLevel,
+  MessageCodes,
   PlatformData,
   PlatformDirectives,
-  ApplicationStateCodes as AppState,
-  ApplicationStateChangeReasonCodes as ChangeReason
 } from "cuss2-typescript-models";
 
-const ExecutionModeEnum = ApplicationActivationExecutionModeEnum
+const ExecutionModeEnum = ApplicationActivationExecutionModeEnum;
 
 const {
   isAnnouncement,
@@ -53,10 +53,17 @@ const {
   isBarcodeReader,
   isCardReader,
   isBiometric,
-  isKeypad, isIllumination, isHeadset,
-  isScale, isCamera, isInsertionBelt,
-  isParkingBelt, isRFIDReader, isVerificationBelt,
-  isAEASBD, isBHS
+  isKeypad,
+  isIllumination,
+  isHeadset,
+  isScale,
+  isCamera,
+  isInsertionBelt,
+  isParkingBelt,
+  isRFIDReader,
+  isVerificationBelt,
+  isAEASBD,
+  isBHS,
 } = ComponentInterrogation;
 
 /**
@@ -64,9 +71,9 @@ const {
  * @param {number} componentID - The componentID to validate
  * @throws {Error} If the componentID is not a number
  */
-function validateComponentId(componentID:any) {
-  if (typeof componentID !== 'number') {
-    throw new TypeError('Invalid componentID: ' + componentID);
+function validateComponentId(componentID: any) {
+  if (typeof componentID !== "number") {
+    throw new TypeError("Invalid componentID: " + componentID);
   }
 }
 
@@ -91,7 +98,6 @@ function validateComponentId(componentID:any) {
  * @property {string} language - The language.
  */
 export class Cuss2 {
-
   /**
    * @memberof Cuss2
    * @method connect - Connect to the cuss platform.
@@ -107,15 +113,21 @@ export class Cuss2 {
    * const connect = await Cuss2.connect('url', 'oauth', '00000000-0000-0000-0000-000000000000', 'client_id', 'client_secret'); // If the requestUnavailable is not provided, it defaults to true and the library will handle moving the application to the UNAVAILABLE state after a simple initialization process.
    * // Alternatively an application can pass false to the requestUnavailable parameter and handle moving the application to the UNAVAILABLE state manually after taking additional initialization steps.
    * const connect = await Cuss2.connect('url', 'oauth, '00000000-0000-0000-0000-000000000000', 'client_id', 'client_secret', false);
-   *
    */
-  static async connect(wss: string, oauth: string = null, deviceID: string = '00000000-0000-0000-0000-000000000000', client_id: string, client_secret: string, requestUnavailable = true): Promise<Cuss2> {
+  static async connect(
+    wss: string,
+    oauth: string = null,
+    deviceID: string = "00000000-0000-0000-0000-000000000000",
+    client_id: string,
+    client_secret: string,
+    requestUnavailable = true,
+  ): Promise<Cuss2> {
     // Check if we're in a browser environment
-    const isBrowser = typeof globalThis.document !== 'undefined';
+    const isBrowser = typeof globalThis.document !== "undefined";
 
     // if (isBrowser) {
     //   document.body.setAttribute('elevated-cuss2', '1');
-		//
+    //
     //   function broadcast(detail: any) {
     //     const event = new CustomEvent('send_to_cuss2_devtools', {detail});
     //     window.dispatchEvent(event);
@@ -123,33 +135,44 @@ export class Cuss2 {
     //   logger.on("log", broadcast);
     // }
 
-    const connection = await Connection.connect(wss, oauth, deviceID, client_id, client_secret);
+    const connection = await Connection.connect(
+      wss,
+      oauth,
+      deviceID,
+      client_id,
+      client_secret,
+    );
     const cuss2 = new Cuss2(connection);
     cuss2.requestUnavailableAfterInitialize = requestUnavailable;
 
     // Only add event listeners if we're in a browser environment
-    if (isBrowser && document.body.hasAttribute('cuss2-devtools')) {
-      console.log('cuss2-devtools detected');
+    if (isBrowser && document.body.hasAttribute("cuss2-devtools")) {
+      console.log("cuss2-devtools detected");
       // @ts-ignore
-      window.addEventListener("execute_from_cuss2_devtools", async ({detail: {id, cmd, args=[]}}) => {
-        console.log('EVENT:execute_from_cuss2_devtools', cmd, args)
-        if (!cmd) return;
-        const parts = cmd.split('.')
-        let error, response, target = Cuss2._get(cuss2, parts);
-        if (typeof target === 'function') {
-          // @ts-ignore
-          const parent = Cuss2._get(cuss2, parts.slice(0, -1));
-          try {
+      window.addEventListener(
+        "execute_from_cuss2_devtools",
+        async ({ detail: { id, cmd, args = [] } }) => {
+          console.log("EVENT:execute_from_cuss2_devtools", cmd, args);
+          if (!cmd) return;
+          const parts = cmd.split(".");
+          let error, response, target = Cuss2._get(cuss2, parts);
+          if (typeof target === "function") {
             // @ts-ignore
-            response = target.apply(parent, args);
-            if (response instanceof Promise)
-              response = await response;
-          }
-          catch(e) {error = e}
-        }
-        else response = target;
-        broadcast({id, cmd, response, error});
-      }, false);
+            const parent = Cuss2._get(cuss2, parts.slice(0, -1));
+            try {
+              // @ts-ignore
+              response = target.apply(parent, args);
+              if (response instanceof Promise) {
+                response = await response;
+              }
+            } catch (e) {
+              error = e;
+            }
+          } else response = target;
+          broadcast({ id, cmd, response, error });
+        },
+        false,
+      );
     }
 
     await cuss2._initialize(requestUnavailable);
@@ -158,7 +181,7 @@ export class Cuss2 {
 
   static _get(cuss2: Cuss2, parts: String[]) {
     // @ts-ignore
-    return parts.reduce((obj, prop) => obj && obj[prop], cuss2)
+    return parts.reduce((obj, prop) => obj && obj[prop], cuss2);
   }
 
   static log = log;
@@ -166,22 +189,25 @@ export class Cuss2 {
   private constructor(connection: Connection) {
     this.connection = connection;
     // Subscribe to messages from the CUSS 2 platform
-    connection.on('message', e => this._handleWebSocketMessage(e))
+    connection.on("message", (e) => this._handleWebSocketMessage(e));
     // Subscribe to the connection being closed and attempt to reconnect
-    connection.on('close', async () => {
+    connection.on("close", async () => {
       await connection._connect();
       await this._initialize(this.requestUnavailableAfterInitialize);
     });
   }
 
-  connection:Connection;
+  connection: Connection;
   environment: EnvironmentLevel = {} as EnvironmentLevel;
-  components: any|undefined = undefined;
+  components: any | undefined = undefined;
 
   // State management with EventEmitter
   private _stateChangeEmitter = new EventEmitter();
-  private _currentState: StateChange = new StateChange(AppState.STOPPED, AppState.STOPPED);
-  private _currentComponent: Component|null = null;
+  private _currentState: StateChange = new StateChange(
+    AppState.STOPPED,
+    AppState.STOPPED,
+  );
+  private _currentComponent: Component | null = null;
 
   requestUnavailableAfterInitialize: boolean = true;
 
@@ -199,7 +225,7 @@ export class Cuss2 {
   verificationBelt?: VerificationBelt;
   parkingBelt?: ParkingBelt;
   rfid?: RFID;
-  headset?:Headset;
+  headset?: Headset;
   camera?: Camera;
   bhs?: BHS;
   aeasbd?: AEASBD;
@@ -210,9 +236,9 @@ export class Cuss2 {
   language?: string;
 
   /**
-  * @typeof {StateChange.current} state Get the current application state from the CUSS 2 platform
-  * @returns {AppState} The current application state
-  */
+   * @typeof {StateChange.current} state Get the current application state from the CUSS 2 platform
+   * @returns {AppState} The current application state
+   */
   get state() {
     return this._currentState.current;
   }
@@ -221,20 +247,23 @@ export class Cuss2 {
     log("info", "Getting Environment Information");
     let level = await this.api.getEnvironment();
     // hydrate device id if none provided
-    if (this.connection.deviceID == '00000000-0000-0000-0000-000000000000' || this.connection.deviceID == null) {
+    if (
+      this.connection.deviceID == "00000000-0000-0000-0000-000000000000" ||
+      this.connection.deviceID == null
+    ) {
       this.connection.deviceID = level.deviceID;
     }
     if (!this.state) {
-      throw new Error('Platform in abnormal state.');
+      throw new Error("Platform in abnormal state.");
     }
     if (this.state === AppState.SUSPENDED) {
-      throw new Error('Platform has SUSPENDED the application');
+      throw new Error("Platform has SUSPENDED the application");
     }
     log("info", "Getting Component List");
     await this.api.getComponents();
     await this.queryComponents().catch((e) => {
-      log("error",'error querying components', e)
-      this._stateChangeEmitter.emit('queryError', e);
+      log("error", "error querying components", e);
+      this._stateChangeEmitter.emit("queryError", e);
     });
     if (requestUnavailable) {
       await this.requestUnavailableState();
@@ -242,72 +271,85 @@ export class Cuss2 {
   }
 
   async _handleWebSocketMessage(event: any) {
-    const message: PlatformData = JSON.parse(event.data)
+    const message: PlatformData = JSON.parse(event.data);
     if (!message) return;
     const { meta, payload } = message;
 
-    log('verbose', '[event.currentApplicationState]', meta.currentApplicationState);
+    log(
+      "verbose",
+      "[event.currentApplicationState]",
+      meta.currentApplicationState,
+    );
 
     const unsolicited = !meta.platformDirective;
 
-    let currentState:any = meta.currentApplicationState.applicationStateCode;
+    let currentState: any = meta.currentApplicationState.applicationStateCode;
 
     if (meta.messageCode === MessageCodes.SESSIONTIMEOUT) {
-      this._stateChangeEmitter.emit('sessionTimeout', meta.messageCode);
+      this._stateChangeEmitter.emit("sessionTimeout", meta.messageCode);
     }
 
-    if(!currentState) {
+    if (!currentState) {
       this.connection._socket?.close();
-      throw new Error('Platform in invalid state. Cannot continue.');
+      throw new Error("Platform in invalid state. Cannot continue.");
     }
-    if(currentState !== this.state) {
+    if (currentState !== this.state) {
       const prevState = this.state;
-      log('verbose', `[state changed] old:${prevState} new:${currentState}`);
+      log("verbose", `[state changed] old:${prevState} new:${currentState}`);
 
       // Update current state and emit event
       this._currentState = new StateChange(prevState, currentState as AppState);
-      this._stateChangeEmitter.emit('stateChange', this._currentState);
+      this._stateChangeEmitter.emit("stateChange", this._currentState);
 
       if (currentState === AppState.UNAVAILABLE) {
         await this.queryComponents().catch((e) => {
-          log("error",'error querying components', e)
-          this._stateChangeEmitter.emit('queryError', e);
+          log("error", "error querying components", e);
+          this._stateChangeEmitter.emit("queryError", e);
         });
         if (this._online) {
           this.checkRequiredComponentsAndSyncState();
         }
-      }
-      else if (currentState === AppState.ACTIVE) {
-        if (!payload.applicationActivation)
-        this.multiTenant = payload?.applicationActivation?.executionMode === ExecutionModeEnum.MAM;
-        this.accessibleMode = payload?.applicationActivation?.accessibleMode || false;
-        this.language = payload?.applicationActivation?.languageID || 'en-US';
-        this._stateChangeEmitter.emit('activated', payload?.applicationActivation);
+      } else if (currentState === AppState.ACTIVE) {
+        if (!payload.applicationActivation) {
+          this.multiTenant = payload?.applicationActivation?.executionMode ===
+            ExecutionModeEnum.MAM;
+        }
+        this.accessibleMode = payload?.applicationActivation?.accessibleMode ||
+          false;
+        this.language = payload?.applicationActivation?.languageID || "en-US";
+        this._stateChangeEmitter.emit(
+          "activated",
+          payload?.applicationActivation,
+        );
       }
       if (prevState === AppState.ACTIVE) {
-        this._stateChangeEmitter.emit('deactivated', currentState as AppState);
+        this._stateChangeEmitter.emit("deactivated", currentState as AppState);
       }
     }
 
-    if(typeof meta.componentID === 'number' && this.components) {
+    if (typeof meta.componentID === "number" && this.components) {
       const component = this.components[meta.componentID];
       if (component && component.stateIsDifferent(message)) {
         component.updateState(message);
 
         // Update current component and emit event
         this._currentComponent = component;
-        this._stateChangeEmitter.emit('componentStateChange', component);
+        this._stateChangeEmitter.emit("componentStateChange", component);
 
-        if (this._online && (unsolicited || meta.platformDirective === PlatformDirectives.PeripheralsQuery)) {
+        if (
+          this._online &&
+          (unsolicited ||
+            meta.platformDirective === PlatformDirectives.PeripheralsQuery)
+        ) {
           this.checkRequiredComponentsAndSyncState();
         }
       }
     }
 
-    log('verbose', "[socket.onmessage]", message);
+    log("verbose", "[socket.onmessage]", message);
 
     // Emit platform message
-    this._stateChangeEmitter.emit('message', message);
+    this._stateChangeEmitter.emit("message", message);
   }
 
   api = {
@@ -321,9 +363,9 @@ export class Cuss2 {
      * const environment = await cuss2.getEnvironment();
      */
     getEnvironment: async (): Promise<EnvironmentLevel> => {
-      const ad = Build.applicationData(PlatformDirectives.PlatformEnvironment)
-      const response = await this.connection.sendAndGetResponse(ad)
-      log('verbose', '[getEnvironment()] response', response);
+      const ad = Build.applicationData(PlatformDirectives.PlatformEnvironment);
+      const response = await this.connection.sendAndGetResponse(ad);
+      log("verbose", "[getEnvironment()] response", response);
       this.environment = response.payload.environmentLevel as EnvironmentLevel;
       return this.environment;
     },
@@ -337,13 +379,13 @@ export class Cuss2 {
      * const components = await cuss2.getComponents();
      */
     getComponents: async (): Promise<ComponentList> => {
-      const ad = Build.applicationData(PlatformDirectives.PlatformComponents)
-      const response = await this.connection.sendAndGetResponse(ad)
-      log('verbose', '[getComponents()] response', response);
+      const ad = Build.applicationData(PlatformDirectives.PlatformComponents);
+      const response = await this.connection.sendAndGetResponse(ad);
+      log("verbose", "[getComponents()] response", response);
       const componentList = response.payload.componentList as ComponentList;
       if (this.components) return componentList;
 
-      const components:any = this.components = {};
+      const components: any = this.components = {};
 
       //first find feeders & dispensers, so they can be linked when printers are created
       componentList.forEach((component) => {
@@ -351,8 +393,9 @@ export class Cuss2 {
         let instance;
 
         if (isFeeder(component)) instance = new Feeder(component, this);
-        else if (isDispenser(component)) instance = new Dispenser(component, this);
-        else return;
+        else if (isDispenser(component)) {
+          instance = new Dispenser(component, this);
+        } else return;
 
         return components[id] = instance;
       });
@@ -361,28 +404,52 @@ export class Cuss2 {
         const id = String(component.componentID);
         let instance;
 
-        if (isAnnouncement(component)) instance = this.announcement = new Announcement(component, this);
-        else if (isBagTagPrinter(component)) instance = this.bagTagPrinter = new BagTagPrinter(component, this);
-        else if (isBoardingPassPrinter(component)) instance = this.boardingPassPrinter = new BoardingPassPrinter(component, this);
-        else if (isDocumentReader(component)) instance = this.documentReader = new DocumentReader(component, this);
-        else if (isBarcodeReader(component)) instance = this.barcodeReader = new BarcodeReader(component, this);
-        else if (isCardReader(component)) instance = this.cardReader = new CardReader(component, this);
-        else if (isKeypad(component)) instance = this.keypad = new Keypad(component, this);
-        else if (isBiometric(component)) instance = this.biometric = new Biometric(component, this);
-        else if (isScale(component)) instance = this.scale = new Scale(component, this);
-        else if (isCamera(component)) instance = this.camera = new Camera(component, this);
-        else if (isInsertionBelt(component)) instance = this.insertionBelt = new InsertionBelt(component, this);
-        else if (isVerificationBelt(component)) instance = this.verificationBelt = new VerificationBelt(component, this);
-        else if (isParkingBelt(component)) instance = this.parkingBelt = new ParkingBelt(component, this);
-        else if (isRFIDReader(component)) instance = this.rfid = new RFID(component, this);
-        else if (isBHS(component)) instance = this.bhs = new BHS(component, this);
-        else if (isAEASBD(component)) instance = this.aeasbd = new AEASBD(component, this);
-        // subcomponents
-        else if (isFeeder(component))  return; // instance = new Feeder(component, this);
-        else if (isDispenser(component))  return; // instance = new Dispenser(component, this);
-        else if (isIllumination(component)) instance = this.illumination = new Illumination(component, this);
-        else if (isHeadset(component)) instance = this.headset = new Headset(component, this);
-        else instance = new Component(component, this);
+        if (isAnnouncement(component)) {
+          instance = this.announcement = new Announcement(component, this);
+        } else if (isBagTagPrinter(component)) {
+          instance = this.bagTagPrinter = new BagTagPrinter(component, this);
+        } else if (isBoardingPassPrinter(component)) {
+          instance = this.boardingPassPrinter = new BoardingPassPrinter(
+            component,
+            this,
+          );
+        } else if (isDocumentReader(component)) {
+          instance = this.documentReader = new DocumentReader(component, this);
+        } else if (isBarcodeReader(component)) {
+          instance = this.barcodeReader = new BarcodeReader(component, this);
+        } else if (isCardReader(component)) {
+          instance = this.cardReader = new CardReader(component, this);
+        } else if (isKeypad(component)) {
+          instance = this.keypad = new Keypad(component, this);
+        } else if (isBiometric(component)) {
+          instance = this.biometric = new Biometric(component, this);
+        } else if (isScale(component)) {
+          instance = this.scale = new Scale(component, this);
+        } else if (isCamera(component)) {
+          instance = this.camera = new Camera(component, this);
+        } else if (isInsertionBelt(component)) {
+          instance = this.insertionBelt = new InsertionBelt(component, this);
+        } else if (isVerificationBelt(component)) {
+          instance = this.verificationBelt = new VerificationBelt(
+            component,
+            this,
+          );
+        } else if (isParkingBelt(component)) {
+          instance = this.parkingBelt = new ParkingBelt(component, this);
+        } else if (isRFIDReader(component)) {
+          instance = this.rfid = new RFID(component, this);
+        } else if (isBHS(component)) {
+          instance = this.bhs = new BHS(component, this);
+        } else if (isAEASBD(component)) {
+          instance = this.aeasbd = new AEASBD(component, this);
+        } // subcomponents
+        else if (isFeeder(component)) return; // instance = new Feeder(component, this);
+        else if (isDispenser(component)) return; // instance = new Dispenser(component, this);
+        else if (isIllumination(component)) {
+          instance = this.illumination = new Illumination(component, this);
+        } else if (isHeadset(component)) {
+          instance = this.headset = new Headset(component, this);
+        } else instance = new Component(component, this);
 
         return components[id] = instance;
       });
@@ -399,10 +466,12 @@ export class Cuss2 {
      * @example
      * const status = await cuss2.getStatus(componentID);
      */
-    getStatus: async (componentID:number): Promise<PlatformData> => {
-      const ad = Build.applicationData(PlatformDirectives.PeripheralsQuery, {componentID})
-      const response = await this.connection.sendAndGetResponse(ad)
-      log('verbose', '[queryDevice()] response', response);
+    getStatus: async (componentID: number): Promise<PlatformData> => {
+      const ad = Build.applicationData(PlatformDirectives.PeripheralsQuery, {
+        componentID,
+      });
+      const response = await this.connection.sendAndGetResponse(ad);
+      log("verbose", "[queryDevice()] response", response);
       return response;
     },
 
@@ -416,12 +485,15 @@ export class Cuss2 {
      * @example
      * const setup = await cuss2.send(componentID, dataExchange);
      */
-    send: async (componentID:number, dataObj:DataRecordList): Promise<PlatformData> => {
+    send: async (
+      componentID: number,
+      dataObj: DataRecordList,
+    ): Promise<PlatformData> => {
       const ad = Build.applicationData(PlatformDirectives.PeripheralsSend, {
         componentID,
-        dataObj
-      })
-      return await this.connection.sendAndGetResponse(ad)
+        dataObj,
+      });
+      return await this.connection.sendAndGetResponse(ad);
     },
 
     /**
@@ -434,13 +506,16 @@ export class Cuss2 {
      * @example
      * const status = await cuss2.setup(componentID, dataExchange);
      */
-    setup: async (componentID:number, dataObj:DataRecordList): Promise<PlatformData> => {
+    setup: async (
+      componentID: number,
+      dataObj: DataRecordList,
+    ): Promise<PlatformData> => {
       validateComponentId(componentID);
       const ad = Build.applicationData(PlatformDirectives.PeripheralsSetup, {
         componentID,
-        dataObj
-      })
-      return await this.connection.sendAndGetResponse(ad)
+        dataObj,
+      });
+      return await this.connection.sendAndGetResponse(ad);
     },
 
     /**
@@ -452,10 +527,12 @@ export class Cuss2 {
      * @example
      * const statusCancel = await cuss2.cancel(componentID);
      */
-    cancel: async (componentID:number): Promise<PlatformData> => {
+    cancel: async (componentID: number): Promise<PlatformData> => {
       validateComponentId(componentID);
-      const ad = Build.applicationData(PlatformDirectives.PeripheralsCancel, {componentID})
-      return await this.connection.sendAndGetResponse(ad)
+      const ad = Build.applicationData(PlatformDirectives.PeripheralsCancel, {
+        componentID,
+      });
+      return await this.connection.sendAndGetResponse(ad);
     },
 
     /**
@@ -467,10 +544,13 @@ export class Cuss2 {
      * @example
      * const statusEnable = await cuss2.enable(componentID);
      */
-    enable: async (componentID:number): Promise<PlatformData> => {
+    enable: async (componentID: number): Promise<PlatformData> => {
       validateComponentId(componentID);
-      const ad = Build.applicationData(PlatformDirectives.PeripheralsUserpresentEnable, {componentID})
-      return await this.connection.sendAndGetResponse(ad)
+      const ad = Build.applicationData(
+        PlatformDirectives.PeripheralsUserpresentEnable,
+        { componentID },
+      );
+      return await this.connection.sendAndGetResponse(ad);
     },
 
     /**
@@ -482,15 +562,21 @@ export class Cuss2 {
      * @example
      * const statusDisable = await cuss2.disable(componentID);
      */
-    disable: async (componentID:number): Promise<PlatformData> => {
+    disable: async (componentID: number): Promise<PlatformData> => {
       validateComponentId(componentID);
-      const ad = Build.applicationData(PlatformDirectives.PeripheralsUserpresentDisable, {componentID})
-      return await this.connection.sendAndGetResponse(ad)
+      const ad = Build.applicationData(
+        PlatformDirectives.PeripheralsUserpresentDisable,
+        { componentID },
+      );
+      return await this.connection.sendAndGetResponse(ad);
     },
-    offer: async (componentID:number): Promise<PlatformData> => {
+    offer: async (componentID: number): Promise<PlatformData> => {
       validateComponentId(componentID);
-      const ad = Build.applicationData(PlatformDirectives.PeripheralsUserpresentOffer, {componentID})
-      return await this.connection.sendAndGetResponse(ad)
+      const ad = Build.applicationData(
+        PlatformDirectives.PeripheralsUserpresentOffer,
+        { componentID },
+      );
+      return await this.connection.sendAndGetResponse(ad);
     },
 
     /**
@@ -504,19 +590,22 @@ export class Cuss2 {
      * @example
      * const startRequest = await cuss2.staterequest(state, reasonCode, reason);
      */
-    staterequest: async (state: AppState, reasonCode = ChangeReason.NOTAPPLICABLE, reason = ''): Promise<PlatformData|undefined> => {
+    staterequest: async (
+      state: AppState,
+      reasonCode = ChangeReason.NOTAPPLICABLE,
+      reason = "",
+    ): Promise<PlatformData | undefined> => {
       if (this.pendingStateChange) {
         return Promise.resolve(undefined);
       }
       log("info", `Requesting ${state} state`);
       this.pendingStateChange = state;
-      let response:PlatformData|undefined;
+      let response: PlatformData | undefined;
       try {
-        const ad = Build.stateChange(state, reasonCode, reason)
-        response = await this.connection.sendAndGetResponse(ad)
+        const ad = Build.stateChange(state, reasonCode, reason);
+        response = await this.connection.sendAndGetResponse(ad);
         return response;
-      }
-      finally {
+      } finally {
         this.pendingStateChange = undefined;
       }
     },
@@ -547,45 +636,61 @@ export class Cuss2 {
       /**
        * @memberof Cuss2.announcement
        */
-      play: async (componentID:number, rawData:string): Promise<PlatformData> => {
+      play: async (
+        componentID: number,
+        rawData: string,
+      ): Promise<PlatformData> => {
         validateComponentId(componentID);
         const dataObj = [{
           data: rawData as any,
-          dsTypes: [ CUSSDataTypes.SSML ]
-        }]
-        const ad = Build.applicationData(PlatformDirectives.PeripheralsAnnouncementPlay, {
-          componentID, dataObj
-        })
-        return await this.connection.sendAndGetResponse(ad)
+          dsTypes: [CUSSDataTypes.SSML],
+        }];
+        const ad = Build.applicationData(
+          PlatformDirectives.PeripheralsAnnouncementPlay,
+          {
+            componentID,
+            dataObj,
+          },
+        );
+        return await this.connection.sendAndGetResponse(ad);
       },
 
       /**
        * @memberof Cuss2.announcement
        */
-      pause: async (componentID:number): Promise<PlatformData> => {
+      pause: async (componentID: number): Promise<PlatformData> => {
         validateComponentId(componentID);
-        const ad = Build.applicationData(PlatformDirectives.PeripheralsAnnouncementPause, {componentID})
-        return await this.connection.sendAndGetResponse(ad)
+        const ad = Build.applicationData(
+          PlatformDirectives.PeripheralsAnnouncementPause,
+          { componentID },
+        );
+        return await this.connection.sendAndGetResponse(ad);
       },
 
       /**
        * @memberof Cuss2.Announcement
        */
-      resume: async (componentID:number): Promise<PlatformData> => {
+      resume: async (componentID: number): Promise<PlatformData> => {
         validateComponentId(componentID);
-        const ad = Build.applicationData(PlatformDirectives.PeripheralsAnnouncementResume, {componentID})
-        return await this.connection.sendAndGetResponse(ad)
+        const ad = Build.applicationData(
+          PlatformDirectives.PeripheralsAnnouncementResume,
+          { componentID },
+        );
+        return await this.connection.sendAndGetResponse(ad);
       },
 
       /**
        * @memberof Cuss2.announcement
        */
-      stop: async (componentID:number): Promise<PlatformData> => {
+      stop: async (componentID: number): Promise<PlatformData> => {
         validateComponentId(componentID);
-        const ad = Build.applicationData(PlatformDirectives.PeripheralsAnnouncementStop, {componentID})
-        return await this.connection.sendAndGetResponse(ad)
-      }
-    }
+        const ad = Build.applicationData(
+          PlatformDirectives.PeripheralsAnnouncementStop,
+          { componentID },
+        );
+        return await this.connection.sendAndGetResponse(ad);
+      },
+    },
   };
 
   //
@@ -599,12 +704,13 @@ export class Cuss2 {
    * @example
    * const requestActiveState = await cuss2.requestActiveState();
    */
-  async requestAvailableState(): Promise<PlatformData|undefined> {
+  async requestAvailableState(): Promise<PlatformData | undefined> {
     // allow hoping directly to AVAILABLE from INITIALIZE
     if (this.state === AppState.INITIALIZE) {
       await this.requestUnavailableState();
     }
-    const okToChange = this.state === AppState.UNAVAILABLE || this.state === AppState.ACTIVE;
+    const okToChange = this.state === AppState.UNAVAILABLE ||
+      this.state === AppState.ACTIVE;
 
     if (okToChange && this.state === AppState.ACTIVE) {
       if (this.components) {
@@ -617,7 +723,9 @@ export class Cuss2 {
       }
     }
 
-    return okToChange ? this.api.staterequest(AppState.AVAILABLE) : Promise.resolve(undefined);
+    return okToChange
+      ? this.api.staterequest(AppState.AVAILABLE)
+      : Promise.resolve(undefined);
   }
   /**
    * Request the platform to change the application state to Unavailable state.
@@ -627,8 +735,9 @@ export class Cuss2 {
    * @example
    * const requestUnavailableState = await cuss2.requestUnavailableState();
    */
-  requestUnavailableState(): Promise<PlatformData|undefined> {
-    const okToChange = this.state === AppState.INITIALIZE || this.state === AppState.AVAILABLE || this.state === AppState.ACTIVE;
+  requestUnavailableState(): Promise<PlatformData | undefined> {
+    const okToChange = this.state === AppState.INITIALIZE ||
+      this.state === AppState.AVAILABLE || this.state === AppState.ACTIVE;
 
     if (okToChange && this.state === AppState.ACTIVE) {
       if (this.components) {
@@ -641,7 +750,9 @@ export class Cuss2 {
       }
     }
 
-    return okToChange ? this.api.staterequest(AppState.UNAVAILABLE) : Promise.resolve(undefined);
+    return okToChange
+      ? this.api.staterequest(AppState.UNAVAILABLE)
+      : Promise.resolve(undefined);
   }
   /**
    * Request the platform to change the application state to Stopped state.
@@ -651,7 +762,7 @@ export class Cuss2 {
    * @example
    * const requestStoppedState = await cuss2.requestStoppedState();
    */
-  requestStoppedState(): Promise<PlatformData|undefined> {
+  requestStoppedState(): Promise<PlatformData | undefined> {
     return this.api.staterequest(AppState.STOPPED);
   }
   /**
@@ -662,9 +773,12 @@ export class Cuss2 {
    * @example
    * const requestActiveState = await cuss2.requestActiveState();
    */
-  requestActiveState(): Promise<PlatformData|undefined> {
-    const okToChange = this.state === AppState.AVAILABLE || this.state === AppState.ACTIVE;
-    return okToChange ? this.api.staterequest(AppState.ACTIVE) : Promise.resolve(undefined);
+  requestActiveState(): Promise<PlatformData | undefined> {
+    const okToChange = this.state === AppState.AVAILABLE ||
+      this.state === AppState.ACTIVE;
+    return okToChange
+      ? this.api.staterequest(AppState.ACTIVE)
+      : Promise.resolve(undefined);
   }
   /**
    * Request the platform to reload the application.
@@ -675,7 +789,8 @@ export class Cuss2 {
    * const requestReload = await cuss2.requestReload();
    */
   async requestReload(): Promise<boolean> {
-    const okToChange = !this.state || this.state === AppState.UNAVAILABLE || this.state === AppState.AVAILABLE || this.state === AppState.ACTIVE;
+    const okToChange = !this.state || this.state === AppState.UNAVAILABLE ||
+      this.state === AppState.AVAILABLE || this.state === AppState.ACTIVE;
     if (!okToChange) {
       return Promise.resolve(false);
     }
@@ -699,27 +814,28 @@ export class Cuss2 {
     }
     const componentList = Object.values(this.components) as Component[];
     await Promise.all(
-      componentList.map(c => c.query()
-        .catch(e => e)) //it rejects statusCodes that are not "OK" - but here we just need to know what it is, so ignore
-      )
+      componentList.map((c) =>
+        c.query()
+          .catch((e) => e)
+      ), //it rejects statusCodes that are not "OK" - but here we just need to know what it is, so ignore
+    );
     return true;
   }
 
   /**
-   *
    * @typeof unavailableComponents
    * @returns {Component[]} List of unavailable components.
    */
   get unavailableComponents(): Component[] {
     const components = Object.values(this.components) as Component[];
-    return components.filter((c:Component) => !c.ready);
+    return components.filter((c: Component) => !c.ready);
   }
   /**
    * @typeof unavailableRequiredComponents
    * @returns {Component[]} List of unavailable components that have been marked required.
    */
   get unavailableRequiredComponents(): Component[] {
-    return this.unavailableComponents.filter((c:Component) => c.required)
+    return this.unavailableComponents.filter((c: Component) => c.required);
   }
 
   /**
@@ -735,23 +851,30 @@ export class Cuss2 {
       const inactiveRequiredComponents = this.unavailableRequiredComponents;
       if (!inactiveRequiredComponents.length) {
         if (this.state === AppState.UNAVAILABLE) {
-          log('verbose', '[checkRequiredComponentsAndSyncState] All required components OK ✅. Ready for AVAILABLE state.');
+          log(
+            "verbose",
+            "[checkRequiredComponentsAndSyncState] All required components OK ✅. Ready for AVAILABLE state.",
+          );
           this.requestAvailableState();
         }
-      }
-      else {
-        log('verbose', '[checkRequiredComponentsAndSyncState] Required components UNAVAILABLE:', inactiveRequiredComponents.map((c: Component) => c.constructor.name));
+      } else {
+        log(
+          "verbose",
+          "[checkRequiredComponentsAndSyncState] Required components UNAVAILABLE:",
+          inactiveRequiredComponents.map((c: Component) => c.constructor.name),
+        );
         this.requestUnavailableState();
       }
-    }
-    else if (this.components) {
+    } else if (this.components) {
       this.requestUnavailableState();
     }
   }
 
   _online: boolean = false;
-  get applicationOnline() { return this._online; }
-  set applicationOnline(online:boolean) {
+  get applicationOnline() {
+    return this._online;
+  }
+  set applicationOnline(online: boolean) {
     this._online = online;
     this.checkRequiredComponentsAndSyncState();
   }
