@@ -1,6 +1,3 @@
-/**
- * Base class for all custom errors in the CUSS2 library
- */
 export class Cuss2Error extends Error {
   constructor(message: string) {
     super(message);
@@ -10,9 +7,6 @@ export class Cuss2Error extends Error {
   }
 }
 
-/**
- * Error thrown when authentication fails
- */
 export class AuthenticationError extends Cuss2Error {
   status: number;
 

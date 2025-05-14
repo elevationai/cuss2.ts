@@ -13,49 +13,6 @@ import {
 import { DeviceType } from "./deviceType.ts";
 import { PlatformResponseError } from "./platformResponseError.ts";
 
-/**
- * @class General object representing a CUSS component with methods and properties to interact with it.
- * @param {EnvironmentComponent} component
- * @param {Cuss2} cuss2
- * @param {DeviceType} _type
- * @property {number} id - Numeric ID assigned to the component; used for identification of a specific component.
- * @property {boolean} required - Whether the component is required to be connected to the CUSS Platform.
- * @property {DeviceType} deviceType - The type of device the component is, *See IATA documentation for more details.
- * @property {number} pendingCalls - The number of pending calls to the component.
- * @property {boolean} enabled - Whether the component is enabled or not.
- * @property {number} pollingInterval - The interval in milliseconds to poll the component for data.
- * @property {any} parent - The parent of the component.
- * @property {Component[]} subcomponents - The subcomponents of the component.
- * @example
- * // id is the numeric ID assigned to the component
- * this.id = id;
- * @example
- * // Listen for messages from the component
- * this.on('message', data => {
- * 	console.log(data);
- * });
- * @example
- * // required is whether the component is required to be connected to the CUSS Platform
- * this.required = true;
- * @example
- * // deviceType is the type of device the component is, *See IATA documentation for more details.
- * this.deviceType = DeviceType;
- * @example
- * // pendingCalls is the number of pending calls to the component
- * this.pendingCalls = 0;
- * @example
- * // enabled is whether the component is enabled or not
- * this.enabled
- * @example
- * // pollingInterval is the interval in milliseconds to poll the component
- * this.pollingInterval = 1000;
- * @example
- * // parent is the parent of the component
- * this.parent = parent;
- * @example
- * // subcomponents are an array subcomponents to the component
- * this.subcomponents = subcomponents;
- */
 // Create a type that includes both Component and EventEmitter methods
 export type ComponentWithEvents = Component & EventEmitter;
 
@@ -74,26 +31,14 @@ export class Component extends EventEmitter {
   parent: any;
   subcomponents: Component[] = [];
 
-  /**
-   * @typeof Getter
-   * @returns {boolean} true if the component is ready
-   */
   get ready(): boolean {
     return this._componentState === ComponentState.READY;
   }
 
-  /**
-   * @typeof Getter
-   * @returns {boolean} true if there are pending calls to the component
-   */
   get pending(): boolean {
     return this.pendingCalls > 0;
   }
 
-  /**
-   * @typeof Getter
-   * @returns {MessageCodes} the status of the component
-   */
   get status(): MessageCodes {
     return this._status;
   }
@@ -205,14 +150,6 @@ export class Component extends EventEmitter {
     );
   }
 
-  /**
-   * Enable the component.
-   * @param {any} args
-   * @returns {Promise<PlatformData>} - The response from the platform.
-   * @example
-   * // Enable the component
-   * Component.enable();
-   */
   enable(...args: any[]): Promise<PlatformData> {
     return this._call(() => this.api.enable(this.id))
       .then((r: any) => {
@@ -221,13 +158,6 @@ export class Component extends EventEmitter {
       });
   }
 
-  /**
-   * Disable the component.
-   * @returns {Promise<PlatformData>} - The response from the platform.
-   * @example
-   * // Disable the component
-   * Component.disable();
-   */
   disable(): Promise<PlatformData> {
     return this._call(() => this.api.disable(this.id))
       .then((r: any) => {
@@ -243,68 +173,25 @@ export class Component extends EventEmitter {
       });
   }
 
-  /**
-   * Call to cancel the component.
-   * @returns {Promise<PlatformData>} - The response from the platform.
-   * @example
-   * // Cancel the component
-   * Component.cancel();
-   */
   cancel(): Promise<PlatformData> {
     return this._call(() => this.api.cancel(this.id));
   }
 
-  /**
-   * Gives the status of the component.
-   * @returns {Promise<PlatformData>} - The response from the platform.
-   * @example
-   * // Get the status of the component
-   * Component.query();
-   */
   query(): Promise<PlatformData> {
     return this._call(() => this.api.getStatus(this.id));
   }
 
-  /**
-   * Sends set up data which depends on the type of the component.
-   * @param {any} dataObj - *Note* see IATA standard for details on the format of the data.
-   * @returns {Promise<PlatformData>} - The response from the platform.
-   * @example
-   * // Send set up data to the component
-   * Component.setup(applicationData);
-   */
   async setup(dataObj: any): Promise<PlatformData> {
     // {dataRecords: object[]|null = null, illuminationData: object|null = null}
     return await this.api.setup(this.id, dataObj);
   }
 
-  /**
-   * A generic way to communicate with the component from the application.
-   * @param {any} dataObj - *Note* see IATA standard for details on the format of the data.
-   * @returns {Promise<PlatformData>} - The response from the platform.
-   * @example
-   * // Send data to the component
-   * Component.send(applicationData);
-   */
   async send(dataObj: any): Promise<PlatformData> {
     // {dataRecords: object[]|null = null, illuminationData: object|null = null}
     return await this.api.send(this.id, dataObj);
   }
 }
 
-/**
- * @class A component that reads data from the platform
- * @extends Component
- * @property {string[]} previousData - the previous data records
- * @example
- * // Listen for data events
- * DataReaderComponent.on('data', data => {
- * 	console.log(data);
- * });
- * @example
- * // access previous data records
- * console.log(DataReaderComponent.previousData);
- */
 export class DataReaderComponent extends Component {
   previousData: string[] = [];
 
@@ -321,13 +208,6 @@ export class DataReaderComponent extends Component {
     }
   }
 
-  /**
-   * Will enable the component and start reading data and after the timeout will disable the component.
-   * @param {number} ms - timeout in milliseconds
-   * @example
-   * // Enable the component and start reading data
-   * DataReaderComponent.read(5000);
-   */
   async read(ms: number = 30000) {
     return new Promise(async (resolve, reject) => {
       await this.enable();
@@ -350,47 +230,23 @@ export class DataReaderComponent extends Component {
   }
 }
 
-/**
- * @class A component that reads barcodes from the platform.
- * @extends DataReaderComponent
- * @param {EnvironmentComponent} component
- * @param {Cuss2} cuss2
- */
 export class BarcodeReader extends DataReaderComponent {
   constructor(component: EnvironmentComponent, cuss2: Cuss2) {
     super(component, cuss2, DeviceType.BARCODE_READER);
   }
 }
 
-/**
- * @class A component that reads documents from the platform.
- * @extends DataReaderComponent
- * @param {EnvironmentComponent} component
- * @param {Cuss2} cuss2
- */
 export class DocumentReader extends DataReaderComponent {
   constructor(component: EnvironmentComponent, cuss2: Cuss2) {
     super(component, cuss2, DeviceType.PASSPORT_READER);
   }
 }
 
-/**
- * @class A component that reads data from the platform.
- * @extends DataReaderComponent
- * @param {EnvironmentComponent} component
- * @param {Cuss2} cuss2
- */
 export class CardReader extends DataReaderComponent {
   constructor(component: EnvironmentComponent, cuss2: Cuss2) {
     super(component, cuss2, DeviceType.MSR_READER);
   }
-  /**
-   * Call set up to enable payment mode or form of identification.
-   * @param {boolean} yes true is payment mode, false is form of identification
-   * @example
-   * // Enable payment mode
-   * CardReader.enablePayment(true);
-   */
+
   async enablePayment(yes: boolean) {
     await this.setup([{
       data: "",
@@ -400,13 +256,6 @@ export class CardReader extends DataReaderComponent {
     }]);
   }
 
-  /**
-   * read the card data for payment
-   * @param {number} ms - timeout in milliseconds of how long it will read for.
-   * @example
-   * // read the card data for payment
-   * CardReader.readPayment(5000);
-   */
   async readPayment(ms: number = 30000) {
     await this.enablePayment(true);
     await this.read(ms);
@@ -414,22 +263,12 @@ export class CardReader extends DataReaderComponent {
   }
 }
 
-/**
- * @class A component that provides weight input
- * @param {EnvironmentComponent} component
- * @param {Cuss2} cuss2
- */
 export class Scale extends DataReaderComponent {
   constructor(component: EnvironmentComponent, cuss2: Cuss2) {
     super(component, cuss2, DeviceType.SCALE);
   }
 }
 
-/**
- * @class A component that provides data input
- * @param {EnvironmentComponent} component
- * @param {Cuss2} cuss2
- */
 export class RFID extends DataReaderComponent {
   constructor(component: EnvironmentComponent, cuss2: Cuss2) {
     super(component, cuss2, DeviceType.RFID);
@@ -460,22 +299,6 @@ export class BHS extends DataReaderComponent {
   }
 }
 
-/**
- * @class A component that prints.
- * @extends Component
- * @param {EnvironmentComponent} component
- * @param {Cuss2} cuss2
- * @param {DeviceType} _type
- * @property {Feeder} feeder - The feeder component linked this printer.
- * @property {Dispenser} dispenser - The dispenser component linked this printer.
-
- * @example
- * //feeder
- * Printer.feeder // The linked feeder component
- * @example
- * //dispenser
- * Printer.dispenser // The linked dispenser component
- */
 export class Printer extends Component {
   constructor(
     component: EnvironmentComponent,
@@ -569,26 +392,14 @@ export class Printer extends Component {
   _combinedReady = false;
   _combinedStatus = MessageCodes.OK;
 
-  /**
-   * @typeof - Getter
-   * @returns {boolean} - The current media present state.
-   */
   get mediaPresent(): boolean {
     return this.dispenser.mediaPresent;
   }
 
-  /**
-   * @typeof - Getter
-   * @returns {boolean} - The combined ready state of the printer, feeder, and dispenser
-   */
   get combinedReady(): boolean {
     return this._combinedReady;
   }
 
-  /**
-   * @typeof - Getter
-   * @returns {MessageCodes} - The combined status of the printer, feeder, and dispenser.
-   */
   get combinedStatus(): MessageCodes {
     return this._combinedStatus;
   }
@@ -619,15 +430,6 @@ export class Printer extends Component {
     super.updateState(msg);
   }
 
-  /**
-   * Combined call to set up the printer and then print.
-   * @param {string[]} rawSetupData - The setup data to send to the printer.
-   * @param {string} rawData - The data to print.
-   * @returns {Promise<PlatformData>} - The response from the platform after the print command.
-   * @example
-   * //set up and print
-   * await Printer.setupAndPrintRaw(['string1','string2'], 'string3')
-   */
   async setupAndPrintRaw(rawSetupData: string[], rawData?: string) {
     if (typeof rawData !== "string") {
       throw new TypeError("Invalid argument: rawData");
@@ -637,14 +439,6 @@ export class Printer extends Component {
     return this.printRaw(rawData);
   }
 
-  /**
-   * Sends a print command to the printer.
-   * @param {string} rawData - The data to print.
-   * @returns {Promise<PlatformData>} - The response from the platform.
-   * @example
-   * //print
-   * await Printer.printRaw('string')
-   */
   async printRaw(rawData: string) {
     return this.sendRaw(rawData)
       .catch((e: PlatformResponseError) => {
@@ -654,15 +448,6 @@ export class Printer extends Component {
       });
   }
 
-  /**
-   * Sends a setup command to the printer.
-   * @param {string | string[]}raw - The setup data to send to the printer.
-   * @param { Array<CUSSDataTypes>} dsTypes - The data types of the setup data. *OptionalParam*
-   * @returns {Promise<PlatformData>} - The response from the platform.
-   * @example
-   * //setup
-   * await Printer.setupRaw('string')
-   */
   async setupRaw(
     raw: string | string[],
     dsTypes: Array<CUSSDataTypes> = [CUSSDataTypes.ITPS],
@@ -700,13 +485,6 @@ export class Printer extends Component {
     return (response.dataRecords || []).map((r: any) => r.data || "");
   }
 
-  /**
-   * Gets environment data from the printer.
-   * @returns dataRecords from the PlatformData response.
-   * @example
-   * //get environment data
-   * Printer.getEnvironmentData()
-   */
   async getEnvironment() {
     return helpers.deserializeDictionary((await this.aeaCommand("ES"))[0]);
   }
@@ -740,12 +518,6 @@ export class Printer extends Component {
   };
 }
 
-/**
- * @class A printer that can print bag tags.
- * @extends Printer
- * @param {EnvironmentComponent} component
- * @param {Cuss2} cuss2
- */
 export class BagTagPrinter extends Printer {
   constructor(component: EnvironmentComponent, cuss2: Cuss2) {
     super(component, cuss2, DeviceType.BAG_TAG_PRINTER);
@@ -765,12 +537,6 @@ export class BagTagPrinter extends Printer {
   };
 }
 
-/**
- * @class A printer that can print boarding passes.
- * @extends Printer
- * @param {EnvironmentComponent} component
- * @param {Cuss2} cuss2
- */
 export class BoardingPassPrinter extends Printer {
   constructor(component: EnvironmentComponent, cuss2: Cuss2) {
     super(component, cuss2, DeviceType.BOARDING_PASS_PRINTER);
@@ -790,16 +556,6 @@ export class BoardingPassPrinter extends Printer {
   };
 }
 
-/**
- * @class A part of a printer that feeds paper.
- * @extends Component
- * @param {EnvironmentComponent} component
- * @param {Cuss2} cuss2
- * @property {Printer} printer - The printer that this feeder is attached to.
- * @example
- * //get the printer that this feeder is attached to
- * Feeder.printer
- */
 export class Feeder extends Component {
   printer?: Printer;
   constructor(component: EnvironmentComponent, cuss2: Cuss2) {
@@ -807,24 +563,10 @@ export class Feeder extends Component {
   }
 }
 
-/**
- * @class A part of a printer that dispenses printed media.
- * @extends Component
- * @param {EnvironmentComponent} component
- * @param {Cuss2} cuss2
- * @property {Printer} printer - The printer that this dispenser is attached to.
- * @example
- * //get the printer that this dispenser is attached to
- * Dispenser.printer
- */
 export class Dispenser extends Component {
   printer?: Printer;
   private _mediaPresent: boolean = false;
 
-  /**
-   * @typeof Getter
-   * @returns {boolean} - Whether or not media is present in the dispenser.
-   */
   get mediaPresent(): boolean {
     return this._mediaPresent;
   }
@@ -850,12 +592,6 @@ export class Dispenser extends Component {
   }
 }
 
-/**
- * @class A component that provides keypad input.
- * @extends Component
- * @param {EnvironmentComponent} component
- * @param {Cuss2} cuss2
- */
 export class Keypad extends Component {
   constructor(component: EnvironmentComponent, cuss2: Cuss2) {
     super(component, cuss2, DeviceType.KEY_PAD);
@@ -887,19 +623,7 @@ export class Keypad extends Component {
   }
 }
 
-/**
- * @class A component that announces messages.
- * @extends Component
- */
 export class Announcement extends Component {
-  /**
-   * Say the announcement.
-   * @param {string} text - The text to say.
-   * @param {string} lang - The language used to say the text.
-   * @returns {Promise<PlatformData>} - The response from the platform.
-   * @example
-   * Announcement.say("something to say", "en-US");
-   */
   say(text: string, lang: string = "en-US") {
     const xml =
       `<?xml version="1.0" encoding="UTF-8"?><speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${lang}">${text}</speak>`;
@@ -908,55 +632,25 @@ export class Announcement extends Component {
   play(xml: string) {
     return this.api.announcement.play(this.id, xml);
   }
-  /**
-   * Stop the announcement.
-   * @returns {Promise<PlatformData>} - The response from the platform.
-   * @example
-   * Announcement.stop();
-   */
+
   stop() {
     return this.api.announcement.stop(this.id);
   }
-  /**
-   * Pause the announcement.
-   * @returns {Promise<PlatformData>} - The response from the platform.
-   * @example
-   * Announcement.pause();
-   */
+
   pause() {
     return this.api.announcement.pause(this.id);
   }
-  /**
-   * Resume the announcement.
-   * @returns {Promise<PlatformData>} - The response from the platform.
-   * @example
-   * Announcement.resume();
-   */
+
   resume() {
     return this.api.announcement.resume(this.id);
   }
 }
 
-/**
- * @class A component that controls illumination.
- * @extends Component
- * @param {EnvironmentComponent} component
- * @param {Cuss2} cuss2
- */
 export class Illumination extends Component {
   constructor(component: EnvironmentComponent, cuss2: Cuss2) {
     super(component, cuss2, DeviceType.ILLUMINATION);
   }
-  /**
-   * Enable the illumination.
-   * @param {number} duration - The duration of the illumination in milliseconds.
-   * @param {string | number[]} color - The color of the illumination.
-   * @param {number[]} blink - How many times to blink
-   * @returns {Promise<PlatformData>} - The response from the platform.
-   * @example
-   * //enable the illumination
-   * Illumination.enable(1000, '#FF0000', [1, 2]);
-   */
+
   override async enable(
     duration: number,
     color?: string | number[],
@@ -982,55 +676,30 @@ export class Illumination extends Component {
   }
 }
 
-/**
- * @class A component that provides audio feedback.
- * @param {EnvironmentComponent} component
- * @param {Cuss2} cuss2
- */
 export class Headset extends Component {
   constructor(component: EnvironmentComponent, cuss2: Cuss2) {
     super(component, cuss2, DeviceType.HEADSET);
   }
 }
 
-/**
- * @class A component that provides biometrics.
- * @param {EnvironmentComponent} component
- * @param {Cuss2} cuss2
- */
 export class Biometric extends Component {
   constructor(component: EnvironmentComponent, cuss2: Cuss2) {
     super(component, cuss2, DeviceType.BIOMETRIC);
   }
 }
 
-/**
- * @class A component that provides audio feedback.
- * @param {EnvironmentComponent} component
- * @param {Cuss2} cuss2
- */
 export class InsertionBelt extends Component {
   constructor(component: EnvironmentComponent, cuss2: Cuss2) {
     super(component, cuss2, DeviceType.INSERTION_BELT);
   }
 }
 
-/**
- * @class A component that provides audio feedback.
- * @param {EnvironmentComponent} component
- * @param {Cuss2} cuss2
- */
 export class VerificationBelt extends Component {
   constructor(component: EnvironmentComponent, cuss2: Cuss2) {
     super(component, cuss2, DeviceType.VERIFICATION_BELT);
   }
 }
 
-/**
- * @class A component that provides audio feedback.
- * @param {EnvironmentComponent} component
- * @param {Cuss2} cuss2
- */
 export class ParkingBelt extends Component {
   constructor(component: EnvironmentComponent, cuss2: Cuss2) {
     super(component, cuss2, DeviceType.PARKING_BELT);

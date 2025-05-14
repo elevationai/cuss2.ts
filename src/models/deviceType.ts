@@ -1,6 +1,3 @@
-/**
- * Interface providing means to handle real-time events for all predefined CUSS websocket responses
- */
 export type DeviceType =
   | "UNKNOWN"
   | "BAG_TAG_PRINTER"
