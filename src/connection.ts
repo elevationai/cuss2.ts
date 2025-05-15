@@ -2,14 +2,26 @@ import { EventEmitter } from "events";
 import { helpers } from "./helper.ts";
 import { PlatformResponseError } from "./models/platformResponseError.ts";
 import { AuthenticationError } from "./models/Errors.ts";
-import type { ApplicationData, PlatformData } from "cuss2-typescript-models";
+import type {ApplicationData, PlatformData, UniqueID} from "cuss2-typescript-models";
 import { AuthResponse } from "./models/authResponse.ts";
 
 // const log = console.log
 // Unused parameters are intentionally ignoreddeno cache --clear
 const log = (..._args: unknown[]) => {};
 
+interface ConnectionEvents {
+  message: [PlatformData];
+  error: [unknown];
+  close: [CloseEvent];
+  // [key: string]: unknown[];
+}
+
 export class Connection extends EventEmitter {
+	// declare emit: <K extends keyof ConnectionEvents>(event: K, ...args: ConnectionEvents[K]) => boolean;
+	declare on: <K extends keyof ConnectionEvents>(event: K, listener: (data: PlatformData) => void) => this;
+	// declare once: <K extends keyof ConnectionEvents>(event: K, listener: (...args: ConnectionEvents[K]) => void) => this;
+	// declare off: <K extends keyof ConnectionEvents>(event: K, listener: (...args: ConnectionEvents[K]) => void) => this;
+
   static async authorize(
     url: string,
     client_id: string,
@@ -82,13 +94,13 @@ export class Connection extends EventEmitter {
   _socketURL: string;
   _socket?: WebSocket;
   _refresher: ReturnType<typeof setTimeout> | null = null;
-  deviceID: string;
+  deviceID: UniqueID;
   access_token = "";
 
   constructor(
     baseURL: string,
     tokenURL: string | null,
-    deviceID: string,
+    deviceID: UniqueID,
     client_id: string,
     client_secret: string,
   ) {
@@ -193,9 +205,9 @@ export class Connection extends EventEmitter {
           }
 
           log("socket.onmessage", event);
-          super.emit("message", event);
+					const platformData = data as PlatformData;
+          super.emit("message", platformData);
 
-          const platformData = data as PlatformData;
           if (platformData?.meta?.requestID) {
             super.emit(platformData.meta.requestID, platformData);
           }
@@ -236,11 +248,7 @@ export class Connection extends EventEmitter {
     const meta = applicationData.meta;
     const reqId = meta.requestID as string;
     meta.oauthToken = this.access_token;
-    if (
-      (meta.deviceID == null ||
-        meta.deviceID == "00000000-0000-0000-0000-000000000000") &&
-      this.deviceID != null
-    ) {
+    if ((meta.deviceID == null || meta.deviceID == "00000000-0000-0000-0000-000000000000") && this.deviceID != null) {
       meta.deviceID = this.deviceID;
     }
     const promise = this.waitFor(reqId);

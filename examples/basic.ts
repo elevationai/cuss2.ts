@@ -30,7 +30,7 @@ async function main() {
     // First call immediately with current state
     console.log(`Current state: ${cuss2._currentState.current}`);
     // Then listen for future changes
-    cuss2._stateChangeEmitter.on("stateChange", (stateChange) => {
+    cuss2.on("stateChange", (stateChange) => {
       console.log(
         `State changed from ${stateChange.previous} to ${stateChange.current}`,
       );
@@ -44,7 +44,7 @@ async function main() {
       );
     }
     // Then listen for future changes
-    cuss2._stateChangeEmitter.on("componentStateChange", (component) => {
+    cuss2.on("componentStateChange", (component) => {
       if (component) {
         console.log(
           `Component ID ${component.id} state changed to ${component.status}`,

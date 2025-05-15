@@ -1,4 +1,4 @@
-import { EventEmitter } from "node:events";
+import { EventEmitter } from "events";
 import { Cuss2 } from "../cuss2.ts";
 import { helpers } from "../helper.ts";
 import {
@@ -12,9 +12,6 @@ import {
 } from "cuss2-typescript-models";
 import { DeviceType } from "./deviceType.ts";
 import { PlatformResponseError } from "./platformResponseError.ts";
-
-// Create a type that includes both Component and EventEmitter methods
-export type ComponentWithEvents = Component & EventEmitter;
 
 export class Component extends EventEmitter {
   _component: EnvironmentComponent;
@@ -58,14 +55,14 @@ export class Component extends EventEmitter {
     });
 
     // Subscribe to platform messages
-    cuss2._stateChangeEmitter.on("message", (data: PlatformData) => {
+    cuss2.on("message", (data: PlatformData) => {
       if (data?.meta?.componentID === this.id) {
         this._handleMessage(data);
       }
     });
 
     // Subscribe to deactivation events
-    cuss2._stateChangeEmitter.on("deactivated", () => {
+    cuss2.on("deactivated", () => {
       this.enabled = false;
     });
 
@@ -135,8 +132,7 @@ export class Component extends EventEmitter {
   }
 
   _handleMessage(data: any) {
-    // Cast to ComponentWithEvents to access EventEmitter methods
-    (this as ComponentWithEvents).emit("message", data);
+    this.emit("message", data);
   }
 
   async _call(action: Function) {
@@ -357,26 +353,26 @@ export class Printer extends Component {
       }
     };
 
-    // Set up listeners for status changes on all components - cast to ComponentWithEvents to access EventEmitter methods
-    (this as ComponentWithEvents).on(
+    // Set up listeners for status changes on all components
+    this.on(
       "readyStateChange",
       updateCombinedReadyState,
     );
-    (this.feeder as ComponentWithEvents).on(
+    this.feeder.on(
       "readyStateChange",
       updateCombinedReadyState,
     );
-    (this.dispenser as ComponentWithEvents).on(
+    this.dispenser.on(
       "readyStateChange",
       updateCombinedReadyState,
     );
 
-    (this as ComponentWithEvents).on("statusChange", updateCombinedStatus);
-    (this.feeder as ComponentWithEvents).on(
+    this.on("statusChange", updateCombinedStatus);
+    this.feeder.on(
       "statusChange",
       updateCombinedStatus,
     );
-    (this.dispenser as ComponentWithEvents).on(
+    this.dispenser.on(
       "statusChange",
       updateCombinedStatus,
     );
@@ -420,8 +416,8 @@ export class Printer extends Component {
       this.feeder.query().catch(console.error);
       this.dispenser.query().catch(console.error);
     } else if (msg.meta.messageCode === MessageCodes.MEDIAPRESENT) {
-      // Cast dispenser to ComponentWithEvents to access EventEmitter methods
-      (this.dispenser as ComponentWithEvents).emit("mediaPresent", true);
+      // Emit mediaPresent event on the dispenser
+      this.dispenser.emit("mediaPresent", true);
       // query the dispenser- which will start a poller that will detect when the media has been taken
       this.dispenser.query().catch(console.error);
     }
@@ -574,18 +570,18 @@ export class Dispenser extends Component {
   constructor(component: EnvironmentComponent, cuss2: Cuss2) {
     super(component, cuss2, DeviceType.DISPENSER);
 
-    // Cast to ComponentWithEvents to access EventEmitter methods
-    (this as ComponentWithEvents).on("statusChange", (status: MessageCodes) => {
+    // Listen for status changes
+    this.on("statusChange", (status: MessageCodes) => {
       if (status === MessageCodes.MEDIAPRESENT) {
         this.pollUntilReady(true, 2000);
         if (!this._mediaPresent) {
           this._mediaPresent = true;
-          (this as ComponentWithEvents).emit("mediaPresent", true);
+          this.emit("mediaPresent", true);
         }
       } else {
         if (this._mediaPresent) {
           this._mediaPresent = false;
-          (this as ComponentWithEvents).emit("mediaPresent", false);
+          this.emit("mediaPresent", false);
         }
       }
     });
@@ -617,8 +613,8 @@ export class Keypad extends Component {
         VOLUMEDOWN: data.includes("VOLUMEDOWN"),
       };
 
-      // Cast to ComponentWithEvents to access EventEmitter methods
-      (this as ComponentWithEvents).emit("keypadData", keypadData);
+      // Emit keypadData event
+      this.emit("keypadData", keypadData);
     }
   }
 }

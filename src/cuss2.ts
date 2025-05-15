@@ -1,5 +1,5 @@
 import { Build, log } from "./helper.ts";
-import { EventEmitter } from "node:events";
+import { EventEmitter } from "events";
 
 import { Connection } from "./connection.ts";
 import { StateChange } from "./models/stateChange.ts";
@@ -66,34 +66,21 @@ const {
   isBHS,
 } = ComponentInterrogation;
 
-function validateComponentId(componentID: any) {
+function validateComponentId(componentID: unknown) {
   if (typeof componentID !== "number") {
     throw new TypeError("Invalid componentID: " + componentID);
   }
 }
 
-export class Cuss2 {
+export class Cuss2 extends EventEmitter {
   static async connect(
     wss: string,
-    oauth: string = null,
+    oauth: string,
     deviceID: string = "00000000-0000-0000-0000-000000000000",
     client_id: string,
     client_secret: string,
     requestUnavailable = true,
   ): Promise<Cuss2> {
-    // Check if we're in a browser environment
-    const isBrowser = typeof globalThis.document !== "undefined";
-
-    // if (isBrowser) {
-    //   document.body.setAttribute('elevated-cuss2', '1');
-    //
-    //   function broadcast(detail: any) {
-    //     const event = new CustomEvent('send_to_cuss2_devtools', {detail});
-    //     window.dispatchEvent(event);
-    //   }
-    //   logger.on("log", broadcast);
-    // }
-
     const connection = await Connection.connect(
       wss,
       oauth,
@@ -104,48 +91,12 @@ export class Cuss2 {
     const cuss2 = new Cuss2(connection);
     cuss2.requestUnavailableAfterInitialize = requestUnavailable;
 
-    // Only add event listeners if we're in a browser environment
-    if (isBrowser && document.body.hasAttribute("cuss2-devtools")) {
-      console.log("cuss2-devtools detected");
-      // @ts-ignore
-      window.addEventListener(
-        "execute_from_cuss2_devtools",
-        async ({ detail: { id, cmd, args = [] } }) => {
-          console.log("EVENT:execute_from_cuss2_devtools", cmd, args);
-          if (!cmd) return;
-          const parts = cmd.split(".");
-          let error, response, target = Cuss2._get(cuss2, parts);
-          if (typeof target === "function") {
-            // @ts-ignore
-            const parent = Cuss2._get(cuss2, parts.slice(0, -1));
-            try {
-              // @ts-ignore
-              response = target.apply(parent, args);
-              if (response instanceof Promise) {
-                response = await response;
-              }
-            } catch (e) {
-              error = e;
-            }
-          } else response = target;
-          broadcast({ id, cmd, response, error });
-        },
-        false,
-      );
-    }
-
     await cuss2._initialize(requestUnavailable);
     return cuss2;
   }
 
-  static _get(cuss2: Cuss2, parts: String[]) {
-    // @ts-ignore
-    return parts.reduce((obj, prop) => obj && obj[prop], cuss2);
-  }
-
-  static log = log;
-
   private constructor(connection: Connection) {
+    super();
     this.connection = connection;
     // Subscribe to messages from the CUSS 2 platform
     connection.on("message", (e) => this._handleWebSocketMessage(e));
@@ -160,8 +111,7 @@ export class Cuss2 {
   environment: EnvironmentLevel = {} as EnvironmentLevel;
   components: any | undefined = undefined;
 
-  // State management with EventEmitter
-  private _stateChangeEmitter = new EventEmitter();
+  // State management
   private _currentState: StateChange = new StateChange(
     AppState.STOPPED,
     AppState.STOPPED,
@@ -200,48 +150,43 @@ export class Cuss2 {
 
   async _initialize(requestUnavailable: boolean): Promise<any> {
     log("info", "Getting Environment Information");
-    let level = await this.api.getEnvironment();
+    const level = await this.api.getEnvironment();
+
     // hydrate device id if none provided
-    if (
-      this.connection.deviceID == "00000000-0000-0000-0000-000000000000" ||
-      this.connection.deviceID == null
-    ) {
+		const deviceID = this.connection.deviceID
+    if (deviceID == "00000000-0000-0000-0000-000000000000" || deviceID == null) {
       this.connection.deviceID = level.deviceID;
     }
     if (!this.state) {
       throw new Error("Platform in abnormal state.");
     }
-    if (this.state === AppState.SUSPENDED) {
-      throw new Error("Platform has SUSPENDED the application");
+
+    if (this.state === AppState.SUSPENDED || this.state === AppState.DISABLED) {
+      throw new Error(`Platform has ${this.state} the application`);
     }
+
     log("info", "Getting Component List");
     await this.api.getComponents();
     await this.queryComponents().catch((e) => {
       log("error", "error querying components", e);
-      this._stateChangeEmitter.emit("queryError", e);
+      super.emit("queryError", e);
     });
     if (requestUnavailable) {
       await this.requestUnavailableState();
     }
   }
 
-  async _handleWebSocketMessage(event: any) {
-    const message: PlatformData = JSON.parse(event.data);
-    if (!message) return;
-    const { meta, payload } = message;
+  async _handleWebSocketMessage(platformData: PlatformData) {
+    if (!platformData) return;
+    const { meta, payload } = platformData;
 
-    log(
-      "verbose",
-      "[event.currentApplicationState]",
-      meta.currentApplicationState,
-    );
+    log("verbose", "[event.currentApplicationState]", meta.currentApplicationState);
 
     const unsolicited = !meta.platformDirective;
-
-    let currentState: any = meta.currentApplicationState.applicationStateCode;
+    const currentState: AppState = meta.currentApplicationState.applicationStateCode;
 
     if (meta.messageCode === MessageCodes.SESSIONTIMEOUT) {
-      this._stateChangeEmitter.emit("sessionTimeout", meta.messageCode);
+      super.emit("sessionTimeout", meta.messageCode);
     }
 
     if (!currentState) {
@@ -254,42 +199,37 @@ export class Cuss2 {
 
       // Update current state and emit event
       this._currentState = new StateChange(prevState, currentState as AppState);
-      this._stateChangeEmitter.emit("stateChange", this._currentState);
+      super.emit("stateChange", this._currentState);
 
       if (currentState === AppState.UNAVAILABLE) {
         await this.queryComponents().catch((e) => {
           log("error", "error querying components", e);
-          this._stateChangeEmitter.emit("queryError", e);
+          super.emit("queryError", e);
         });
         if (this._online) {
           this.checkRequiredComponentsAndSyncState();
         }
       } else if (currentState === AppState.ACTIVE) {
-        if (!payload.applicationActivation) {
-          this.multiTenant = payload?.applicationActivation?.executionMode ===
-            ExecutionModeEnum.MAM;
+        if (!payload?.applicationActivation) {
+          this.multiTenant = payload?.applicationActivation?.executionMode === ExecutionModeEnum.MAM;
         }
-        this.accessibleMode = payload?.applicationActivation?.accessibleMode ||
-          false;
+        this.accessibleMode = payload?.applicationActivation?.accessibleMode || false;
         this.language = payload?.applicationActivation?.languageID || "en-US";
-        this._stateChangeEmitter.emit(
-          "activated",
-          payload?.applicationActivation,
-        );
+        super.emit("activated", payload?.applicationActivation);
       }
       if (prevState === AppState.ACTIVE) {
-        this._stateChangeEmitter.emit("deactivated", currentState as AppState);
+        super.emit("deactivated", currentState as AppState);
       }
     }
 
     if (typeof meta.componentID === "number" && this.components) {
       const component = this.components[meta.componentID];
-      if (component && component.stateIsDifferent(message)) {
-        component.updateState(message);
+      if (component && component.stateIsDifferent(platformData)) {
+        component.updateState(platformData);
 
         // Update current component and emit event
         this._currentComponent = component;
-        this._stateChangeEmitter.emit("componentStateChange", component);
+        super.emit("componentStateChange", component);
 
         if (
           this._online &&
@@ -301,10 +241,10 @@ export class Cuss2 {
       }
     }
 
-    log("verbose", "[socket.onmessage]", message);
+    log("verbose", "[socket.onmessage]", platformData);
 
     // Emit platform message
-    this._stateChangeEmitter.emit("message", message);
+    super.emit("message", platformData);
   }
 
   api = {
@@ -553,7 +493,7 @@ export class Cuss2 {
       ? this.api.staterequest(AppState.AVAILABLE)
       : Promise.resolve(undefined);
   }
-  
+
   requestUnavailableState(): Promise<PlatformData | undefined> {
     const okToChange = this.state === AppState.INITIALIZE ||
       this.state === AppState.AVAILABLE || this.state === AppState.ACTIVE;
@@ -573,11 +513,11 @@ export class Cuss2 {
       ? this.api.staterequest(AppState.UNAVAILABLE)
       : Promise.resolve(undefined);
   }
-  
+
   requestStoppedState(): Promise<PlatformData | undefined> {
     return this.api.staterequest(AppState.STOPPED);
   }
-  
+
   requestActiveState(): Promise<PlatformData | undefined> {
     const okToChange = this.state === AppState.AVAILABLE ||
       this.state === AppState.ACTIVE;
@@ -585,7 +525,7 @@ export class Cuss2 {
       ? this.api.staterequest(AppState.ACTIVE)
       : Promise.resolve(undefined);
   }
-  
+
   async requestReload(): Promise<boolean> {
     const okToChange = !this.state || this.state === AppState.UNAVAILABLE ||
       this.state === AppState.AVAILABLE || this.state === AppState.ACTIVE;
@@ -616,7 +556,7 @@ export class Cuss2 {
     const components = Object.values(this.components) as Component[];
     return components.filter((c: Component) => !c.ready);
   }
-  
+
   get unavailableRequiredComponents(): Component[] {
     return this.unavailableComponents.filter((c: Component) => c.required);
   }

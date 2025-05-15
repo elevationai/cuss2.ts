@@ -93,12 +93,12 @@ if (cuss2?.boardingPassPrinter) {
 }
 
 // Listen for activation events
-cuss2._stateChangeEmitter.on("activated", () => {
+cuss2.on("activated", () => {
   console.log("Application is active");
 });
 
 // Listen for deactivation events
-cuss2._stateChangeEmitter.on("deactivated", () => {
+cuss2.on("deactivated", () => {
   console.log("Application is no longer active");
 });
 ```
