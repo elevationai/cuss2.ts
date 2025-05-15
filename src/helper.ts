@@ -34,6 +34,7 @@ export const helpers = {
     return text.split(delimiter1).filter((p) => !!p);
   },
   split_every: (text: string, n: number): string[] => {
+    if (!text) return [];
     return text.match(new RegExp(".{1," + n + "}", "g")) as string[];
   },
   deserializeDictionary: (
