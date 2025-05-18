@@ -1,7 +1,7 @@
-import { Component } from "./component.ts";
+import { Component } from "./Component.ts";
 import { DeviceType } from "./deviceType.ts";
 import { Cuss2 } from "../cuss2.ts";
-import { EnvironmentComponent } from "cuss2-typescript-models";
+import { CUSS2IlluminationDomainIlluminationData, EnvironmentComponent, PlatformData } from "cuss2-typescript-models";
 
 // Define enum for light colors
 enum LightColorNameEnum {
@@ -18,10 +18,10 @@ export class Illumination extends Component {
   }
 
   override async enable(
-    duration: number,
+    duration: number = 0,
     color?: string | number[],
     blink?: number[],
-  ) {
+  ): Promise<PlatformData> {
     const name = (typeof color === "string")
       ? LightColorNameEnum[color as keyof typeof LightColorNameEnum] || undefined
       : undefined;
@@ -36,8 +36,13 @@ export class Illumination extends Component {
       await this.disable();
     }
     await super.enable();
-    return await this.send({
-      illuminationData: { duration, lightColor: { name, rgb }, blinkRate },
-    });
+
+    const dataObj = {
+      duration,
+      lightColor: { name, rgb },
+      blinkRate,
+    } as CUSS2IlluminationDomainIlluminationData;
+
+    return await this.send(dataObj);
   }
 }

@@ -1,4 +1,4 @@
-import { Component } from "./component.ts";
+import { Component } from "./Component.ts";
 import { Feeder } from "./Feeder.ts";
 import { Dispenser } from "./Dispenser.ts";
 import { DeviceType } from "./deviceType.ts";
@@ -7,6 +7,8 @@ import { helpers } from "../helper.ts";
 import {
   ComponentState,
   CUSSDataTypes,
+  DataRecord,
+  DataRecordList,
   EnvironmentComponent,
   MessageCodes,
   PlatformData,
@@ -25,7 +27,7 @@ export class Printer extends Component {
     const missingLink = (msg: string) => {
       throw new Error(msg);
     };
-    const linked = component.linkedComponentIDs?.map((id) => cuss2.components[id as number] as Component) || [];
+    const linked = component.linkedComponentIDs?.map((id) => cuss2.components?.[id as number] as Component) || [];
 
     this.feeder = linked.find((c) => c instanceof Feeder) ||
       missingLink("Feeder not found for Printer " + this.id);
@@ -152,7 +154,7 @@ export class Printer extends Component {
     return this.printRaw(rawData);
   }
 
-  async printRaw(rawData: string) {
+  printRaw(rawData: string) {
     return this.sendRaw(rawData)
       .catch((e: PlatformResponseError) => {
         return this.cancel().then(() => {
@@ -161,6 +163,7 @@ export class Printer extends Component {
       });
   }
 
+  //TODO: Convert to sending as a batch
   async setupRaw(
     raw: string | string[],
     dsTypes: Array<CUSSDataTypes> = [CUSSDataTypes.ITPS],
@@ -171,31 +174,41 @@ export class Printer extends Component {
     }
     const rawArray: string[] = isArray ? raw as string[] : [raw as string];
 
-    const dx = (r: string) => [{
-      data: r as any,
-      dsTypes: dsTypes,
-    }];
+    const makeDataRecordList = (r: string) =>
+      [{
+        data: r as string,
+        dsTypes: dsTypes,
+      } as DataRecord] as DataRecordList;
 
+    // Each is sent individually- but we should be able to sent them all in 1
+    // ... NOTE: Sending as a group isn't possible in CUSS1
     return await Promise.all(
-      rawArray.map((r) => this.api.setup(this.id, dx(r))),
+      rawArray.map((r) => this.api.setup(this.id, makeDataRecordList(r))),
     )
       .then((results) => isArray ? results : results[0]);
   }
 
+  //TODO: Convert to sending as a batch
   async sendRaw(
     raw: string,
     dsTypes: Array<CUSSDataTypes> = [CUSSDataTypes.ITPS],
   ) {
-    const dataRecords = [{
-      data: raw as any,
+    return await this.api.send(this.id, [{
+      data: raw as string,
       dsTypes: dsTypes,
-    }];
-    return this.api.send(this.id, dataRecords);
+    } as DataRecord] as DataRecordList);
   }
 
   async aeaCommand(cmd: string) {
     const response = await this.setupRaw(cmd);
-    return (response.dataRecords || []).map((r: any) => r.data || "");
+    if (Array.isArray(response)) {
+      return response.flatMap((r) => {
+        const records = (r as unknown as { dataRecords?: Array<{ data?: string }> }).dataRecords || [];
+        return records.map((dr) => dr.data || "");
+      });
+    }
+    const records = (response as unknown as { dataRecords?: Array<{ data?: string }> }).dataRecords || [];
+    return records.map((r) => r.data || "");
   }
 
   async getEnvironment() {
@@ -210,23 +223,23 @@ export class Printer extends Component {
     ) || [];
   }
 
-  logos: any = {
+  logos = {
     clear: async (id = "") => {
       const response = await this.aeaCommand("LC" + id);
       return response[0] && response[0].indexOf("OK") > -1;
     },
-    query: async (id = "") => {
-      return this._getPairedResponse("LS");
+    query: async () => {
+      return await this._getPairedResponse("LS");
     },
   };
 
-  pectabs: any = {
+  pectabs = {
     clear: async (id = "") => {
       const response = await this.aeaCommand("PC" + id);
       return response[0] && response[0].indexOf("OK") > -1;
     },
     query: async () => {
-      return this._getPairedResponse("PS");
+      return await this._getPairedResponse("PS");
     },
   };
 }

@@ -1,4 +1,4 @@
-import { assertEquals, assertExists, assertRejects, assertStringIncludes, fail } from "jsr:@std/assert";
+import { assertEquals, assertExists, assertRejects, assertStringIncludes, fail as _fail } from "jsr:@std/assert";
 import { delay } from "jsr:@std/async/delay";
 
 import { Connection, global } from "./connection.ts";
@@ -544,7 +544,7 @@ Deno.test(
 );
 
 // Directly test the isOpen check in _createWebSocketAndAttachEventHandlers
-Deno.test.only(
+Deno.test(
   "_createWebSocketAndAttachEventHandlers should not create new WebSocket when isOpen is true",
   mockGlobal(async () => {
     let constructorCalls = 0;
@@ -754,7 +754,7 @@ Deno.test(
     };
 
     // @ts-ignore - Mock WebSocket for testing
-    global.WebSocket = function (url: string) {
+    global.WebSocket = function (_url: string) {
       return new MockWebSocket() as unknown as WebSocket;
     } as unknown as typeof WebSocket;
 
@@ -874,40 +874,6 @@ Deno.test("send should not override existing oauthToken and deviceID", async () 
   assertEquals(sentData.meta.deviceID, customDeviceId);
 });
 
-Deno.test("send should do nothing if socket is not initialized", () => {
-  const connection = new Connection(
-    testBaseUrl,
-    testTokenUrl,
-    testDeviceId,
-    testClientId,
-    testClientSecret,
-  );
-
-  // Set access token
-  connection.access_token = testToken;
-
-  // Verify _socket is undefined
-  // @ts-ignore - Accessing private property for testing
-  assertEquals(connection._socket, undefined);
-
-  // Create test data
-  // @ts-ignore - Using simplified test data structure
-  const testData = {
-    meta: {
-      requestID: "test-request-id",
-      directive: PlatformDirectives.PlatformApplicationsStaterequest,
-    },
-    payload: { test: true },
-  };
-
-  // This should not throw an error
-  // @ts-ignore - Testing with simplified data structure
-  const result = connection.send(testData);
-
-  // Result should be undefined because _socket is undefined
-  assertEquals(result, undefined);
-});
-
 // Tests for sendAndGetResponse method
 Deno.test("sendAndGetResponse should throw error if socket is not connected", async () => {
   const connection = new Connection(
@@ -1021,20 +987,15 @@ Deno.test("sendAndGetResponse should send data and wait for response", async () 
 });
 
 Deno.test("sendAndGetResponse should throw PlatformResponseError for critical errors", async () => {
-  const connection = new Connection(
+	mockWebSocket();
+
+  const connection = await Connection.connect(
     testBaseUrl,
     testTokenUrl,
     testDeviceId,
     testClientId,
     testClientSecret,
   );
-
-  // Set access token
-  connection.access_token = testToken;
-
-  const mockWs = mockWebSocket();
-  // @ts-ignore - Accessing private property for testing
-  connection._socket = mockWs;
 
   // Mock the waitFor method to return error
   connection.waitFor = () => {

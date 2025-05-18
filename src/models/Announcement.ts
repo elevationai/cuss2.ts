@@ -1,4 +1,4 @@
-import { Component } from "./component.ts";
+import { Component } from "./Component.ts";
 
 export class Announcement extends Component {
   say(text: string, lang: string = "en-US") {

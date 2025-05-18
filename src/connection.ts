@@ -241,7 +241,7 @@ export class Connection extends EventEmitter {
           }
         };
 
-        socket.onclose = async (e) => {
+        socket.onclose = (e) => {
           log("Websocket Close:", e.reason);
           socket.onopen = null;
           socket.onclose = null;
@@ -272,7 +272,7 @@ export class Connection extends EventEmitter {
     if (data instanceof Object && !data.meta?.deviceID) {
       data.meta.deviceID = this.deviceID;
     }
-    return this._socket?.send(JSON.stringify(data));
+    this._socket?.send(JSON.stringify(data));
   }
 
   async sendAndGetResponse(

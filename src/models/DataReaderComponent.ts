@@ -1,8 +1,5 @@
-import { Component } from "./component.ts";
+import { Component } from "./Component.ts";
 import { DataRecord, MessageCodes, PlatformData } from "cuss2-typescript-models";
-import { DeviceType } from "./deviceType.ts";
-import { Cuss2 } from "../cuss2.ts";
-import { EnvironmentComponent } from "cuss2-typescript-models";
 
 export class DataReaderComponent extends Component {
   previousData: string[] = [];
@@ -18,24 +15,24 @@ export class DataReaderComponent extends Component {
     }
   }
 
-  async read(ms: number = 30000) {
-    return new Promise(async (resolve, reject) => {
-      await this.enable();
+	async read(ms: number = 30000): Promise<string[]> {
+		await this.enable();
 
-      // Create a timeout
-      const timeoutId = setTimeout(() => {
-        this.off("data", dataHandler);
-        reject(new Error(`Timeout of ${ms}ms exceeded`));
-      }, ms);
+		return new Promise<string[]>((resolve, reject) => {
+			// Create a timeout
+			const timeoutId = setTimeout(() => {
+				this.off("data", dataHandler);
+				reject(new Error(`Timeout of ${ms}ms exceeded`));
+			}, ms);
 
-      // Set up a one-time data handler
-      const dataHandler = (data: string[]) => {
-        clearTimeout(timeoutId);
-        resolve(data);
-      };
+			// Set up a one-time data handler
+			const dataHandler = (data: string[]): void => {
+				clearTimeout(timeoutId);
+				resolve(data);
+			};
 
-      this.once("data", dataHandler);
-    })
-      .finally(() => this.disable());
-  }
+			this.once("data", dataHandler);
+		})
+			.finally(() => this.disable());
+	}
 }

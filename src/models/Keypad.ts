@@ -1,4 +1,4 @@
-import { Component } from "./component.ts";
+import { Component } from "./Component.ts";
 import { DeviceType } from "./deviceType.ts";
 import { Cuss2 } from "../cuss2.ts";
 import { EnvironmentComponent, PlatformData } from "cuss2-typescript-models";

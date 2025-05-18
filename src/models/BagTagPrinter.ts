@@ -14,7 +14,7 @@ export class BagTagPrinter extends Printer {
   } = {
     clear: async (id = "") => {
       const response = await this.aeaCommand("PC" + id);
-      return response[0] && response[0].indexOf("OK") > -1;
+      return !!(response[0] && response[0].indexOf("OK") > -1);
     },
     query: async () => {
       return await this._getPairedResponse("PS", 4);

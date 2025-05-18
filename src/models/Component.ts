@@ -1,17 +1,19 @@
 import { EventEmitter } from "events";
 import { Cuss2 } from "../cuss2.ts";
-import { ComponentState, EnvironmentComponent, MessageCodes, PlatformData } from "cuss2-typescript-models";
+import {
+  BaggageData,
+  CommonUsePaymentMessage,
+  ComponentState,
+  CUSS2BiometricsDomainCommonUseBiometricMessage,
+  CUSS2IlluminationDomainIlluminationData,
+  DataRecordList,
+  EnvironmentComponent,
+  MessageCodes,
+  PlatformData,
+  ScreenResolution,
+} from "cuss2-typescript-models";
 import { DeviceType } from "./deviceType.ts";
-
-// Define an interface for the API to replace 'any'
-interface ComponentAPI {
-  enable: (id: number) => Promise<PlatformData>;
-  disable: (id: number) => Promise<PlatformData>;
-  cancel: (id: number) => Promise<PlatformData>;
-  getStatus: (id: number) => Promise<PlatformData>;
-  setup: (id: number, data: Record<string, unknown>) => Promise<PlatformData>;
-  send: (id: number, data: Record<string, unknown>) => Promise<PlatformData>;
-}
+import { ComponentAPI } from "./ComponentAPI.ts";
 
 export class Component extends EventEmitter {
   _component: EnvironmentComponent;
@@ -75,7 +77,7 @@ export class Component extends EventEmitter {
         ...component.linkedComponentIDs as number[],
       );
       if (parentId != this.id) {
-        this.parent = cuss2.components[parentId] as Component;
+        this.parent = cuss2.components?.[parentId] as Component;
         // feeder and dispenser are created in the printer component
         if (this.parent) {
           this.parent.subcomponents.push(this);
@@ -175,11 +177,19 @@ export class Component extends EventEmitter {
     return await this._call(() => this.api.getStatus(this.id));
   }
 
-  async setup(dataObj: Record<string, unknown>): Promise<PlatformData> {
+  async setup(dataObj: DataRecordList): Promise<PlatformData> {
     return await this._call(() => this.api.setup(this.id, dataObj));
   }
 
-  async send(dataObj: Record<string, unknown>): Promise<PlatformData> {
+  async send(
+    dataObj:
+      | DataRecordList
+      | ScreenResolution
+      | CUSS2IlluminationDomainIlluminationData
+      | BaggageData
+      | CommonUsePaymentMessage
+      | CUSS2BiometricsDomainCommonUseBiometricMessage,
+  ): Promise<PlatformData> {
     return await this._call(() => this.api.send(this.id, dataObj));
   }
 }

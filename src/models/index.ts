@@ -1,5 +1,5 @@
 // Base component classes
-export { Component } from "./component.ts";
+export { Component } from "./Component.ts";
 export { DataReaderComponent } from "./DataReaderComponent.ts";
 
 // Reader components

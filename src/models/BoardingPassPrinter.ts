@@ -14,9 +14,9 @@ export class BoardingPassPrinter extends Printer {
   } = {
     clear: async (id = "") => {
       const response = await this.aeaCommand("TC" + id);
-      return response[0] && response[0].indexOf("OK") > -1;
+      return !!(response[0] && response[0].indexOf("OK") > -1);
     },
-    query: async (id = "") => {
+    query: async () => {
       return await this._getPairedResponse("TA");
     },
   };
