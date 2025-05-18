@@ -140,7 +140,7 @@ export class Connection extends EventEmitter {
   private _cleanBaseURL(url: string): string {
     // Remove query parameters if present
     // url.split always returns at least one element, so we can safely access [0]
-		const parts = url.split("?");
+    const parts = url.split("?");
     const cleanURL = parts[0];
     // Remove trailing slash if present
     return cleanURL.endsWith("/") ? cleanURL.slice(0, -1) : cleanURL;
