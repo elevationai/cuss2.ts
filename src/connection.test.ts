@@ -1382,3 +1382,77 @@ Deno.test("waitFor should clean up listeners after resolution", async () => {
   assertEquals(offCalls.length, 1);
   assertEquals(offCalls[0].event, testEventName);
 });
+
+// Test token refreshing with short expiration time
+Deno.test("Connection should refresh token when expires_in is short", mockGlobal(async () => {
+  // Create test constants
+  const firstToken = "first-token";
+  const secondToken = "second-refreshed-token";
+  const shortExpiration = 1; // 1 second expiration
+
+  // Track auth calls and tokens
+  let authorizeCalls = 0;
+  const issuedTokens: string[] = [];
+
+  // Override the authorize method to return tokens with short expiration
+  const originalAuthorize = Connection.authorize;
+  // deno-lint-ignore require-await
+  Connection.authorize = async (_url: string, _client_id: string, _client_secret: string) => {
+    authorizeCalls++;
+    const token = authorizeCalls === 1 ? firstToken : secondToken;
+    issuedTokens.push(token);
+
+    return {
+      access_token: token,
+      expires_in: shortExpiration,
+      token_type: "Bearer",
+    };
+  };
+
+  try {
+    // Mock the timers to have precise control
+    const timeoutCalls: Array<{ callback: TimerHandler, ms: number }> = [];
+    global.setTimeout = ((callback: TimerHandler, ms?: number) => {
+      timeoutCalls.push({ callback, ms: ms || 0 });
+      return timeoutCalls.length as unknown as ReturnType<typeof setTimeout>;
+    });
+
+    // Create the connection
+    const connection = new Connection(
+      testBaseUrl,
+      testTokenUrl,
+      testDeviceId,
+      testClientId,
+      testClientSecret,
+    );
+
+    // Initialize authentication
+    // @ts-ignore - Accessing private method for testing
+    await connection._authenticateAndQueueTokenRefresh();
+
+    // Check first token
+    assertEquals(connection.access_token, firstToken);
+    assertEquals(authorizeCalls, 1);
+    assertEquals(timeoutCalls.length, 1);
+
+    // Verify timeout was set for almost the full expiration time
+    const refreshTimeMs = shortExpiration * 1000 - 1000;
+    assertEquals(timeoutCalls[0].ms, refreshTimeMs);
+
+    // Manually trigger the refresh callback
+    if (typeof timeoutCalls[0].callback === "function") {
+      await timeoutCalls[0].callback();
+    }
+
+    // Verify second token was obtained
+    assertEquals(connection.access_token, secondToken);
+    assertEquals(authorizeCalls, 2);
+    assertEquals(issuedTokens, [firstToken, secondToken]);
+
+    // Verify another timeout was set for the next refresh
+    assertEquals(timeoutCalls.length, 2);
+  } finally {
+    // Restore original method
+    Connection.authorize = originalAuthorize;
+  }
+}));
