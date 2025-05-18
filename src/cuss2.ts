@@ -26,7 +26,7 @@ import {
   RFID,
   Scale,
   VerificationBelt,
-} from "./models/component.ts";
+} from "./models/index.ts";
 
 import {
   ApplicationActivationExecutionModeEnum,
