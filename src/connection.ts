@@ -47,7 +47,7 @@ export class Connection extends EventEmitter {
   };
 
   get isOpen() {
-    return this._socket && this._socket.readyState === global.WebSocket.OPEN;
+    return this._socket && this._socket.readyState === 1; // OPEN
   }
 
   constructor(

@@ -542,6 +542,31 @@ Deno.test(
   }),
 );
 
+// Directly test the isOpen check in _createWebSocketAndAttachEventHandlers
+Deno.test.only(
+	"_createWebSocketAndAttachEventHandlers should not create new WebSocket when isOpen is true",
+  mockGlobal(async () => {
+    let constructorCalls = 0;
+    mockFetch();
+    mockWebSocket((_ws: MockWebSocket) => {
+      constructorCalls++;
+      return undefined;
+    });
+    const connection = await Connection.connect(
+      testBaseUrl,
+      testTokenUrl,
+      testDeviceId,
+      testClientId,
+      testClientSecret,
+    );
+
+    assertEquals(connection.isOpen, true);
+
+    const result = await connection._createWebSocketAndAttachEventHandlers();
+    assertEquals(result, true);
+    assertEquals(constructorCalls, 1);
+  }),
+);
 Deno.test(
   "_connect should handle WebSocket message events",
   mockGlobal(async () => {
