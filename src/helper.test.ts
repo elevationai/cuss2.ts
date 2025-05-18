@@ -1,17 +1,11 @@
 import { assertEquals, assertExists, assertInstanceOf } from "https://deno.land/std/testing/asserts.ts";
+import { Build, helpers, log, logger, LogMessage } from "./helper.ts";
 import {
-  LogMessage,
-  log,
-  logger,
-  helpers,
-  Build
-} from "./helper.ts";
-import {
+  ApplicationStateChangeReasonCodes,
+  ApplicationStateCodes,
+  ApplicationTransfer,
   MessageCodes,
   PlatformDirectives,
-  ApplicationStateCodes,
-  ApplicationStateChangeReasonCodes,
-  ApplicationTransfer
 } from "cuss2-typescript-models";
 import { ApplicationState } from "cuss2-typescript-models";
 
@@ -75,15 +69,15 @@ Deno.test("helpers.split_every should split string into chunks of specified size
 Deno.test("helpers.deserializeDictionary should convert delimited string to key-value object", () => {
   assertEquals(
     helpers.deserializeDictionary("key1=value1#key2=value2"),
-    { key1: "value1", key2: "value2" }
+    { key1: "value1", key2: "value2" },
   );
   assertEquals(
     helpers.deserializeDictionary("key1=value1#invalidentry#key2=value2"),
-    { key1: "value1", key2: "value2" }
+    { key1: "value1", key2: "value2" },
   );
   assertEquals(
     helpers.deserializeDictionary("key=value|another=test", "|", "="),
-    { key: "value", another: "test" }
+    { key: "value", another: "test" },
   );
   assertEquals(helpers.deserializeDictionary(""), {});
 });
@@ -103,12 +97,12 @@ Deno.test("Build.applicationData should build correct structure for ApplicationS
     applicationStateCode: ApplicationStateCodes.AVAILABLE,
     applicationStateChangeReasonCode: ApplicationStateChangeReasonCodes.NOTAPPLICABLE,
     applicationStateChangeReason: "test reason",
-    applicationBrand: "test brand"
+    applicationBrand: "test brand",
   } as ApplicationState;
 
   const result = Build.applicationData(
     PlatformDirectives.PlatformApplicationsStaterequest,
-    { dataObj: applicationState }
+    { dataObj: applicationState },
   );
 
   // Check meta properties
@@ -134,8 +128,8 @@ Deno.test("Build.applicationData should build correct structure for ApplicationT
     {
       dataObj: applicationTransfer,
       componentID: "comp-123",
-      deviceID: "device-456"
-    }
+      deviceID: "device-456",
+    },
   );
 
   // Check meta properties
@@ -154,7 +148,7 @@ Deno.test("Build.stateChange should build correct state change request", () => {
     ApplicationStateCodes.ACTIVE,
     ApplicationStateChangeReasonCodes.NOTAPPLICABLE,
     "Test reason",
-    "Test brand"
+    "Test brand",
   );
 
   // Check meta
@@ -163,7 +157,10 @@ Deno.test("Build.stateChange should build correct state change request", () => {
   // Check payload
   if (result.payload && result.payload.applicationState) {
     assertEquals(result.payload.applicationState.applicationStateCode, ApplicationStateCodes.ACTIVE);
-    assertEquals(result.payload.applicationState.applicationStateChangeReasonCode, ApplicationStateChangeReasonCodes.NOTAPPLICABLE);
+    assertEquals(
+      result.payload.applicationState.applicationStateChangeReasonCode,
+      ApplicationStateChangeReasonCodes.NOTAPPLICABLE,
+    );
     assertEquals(result.payload.applicationState.applicationStateChangeReason, "Test reason");
     assertEquals(result.payload.applicationState.applicationBrand, "Test brand");
   }
@@ -173,13 +170,16 @@ Deno.test("Build.stateChange should work without brand", () => {
   const result = Build.stateChange(
     ApplicationStateCodes.INITIALIZE,
     ApplicationStateChangeReasonCodes.NOTAPPLICABLE,
-    "Another reason"
+    "Another reason",
   );
 
   // Check payload
   if (result.payload && result.payload.applicationState) {
     assertEquals(result.payload.applicationState.applicationStateCode, ApplicationStateCodes.INITIALIZE);
-    assertEquals(result.payload.applicationState.applicationStateChangeReasonCode, ApplicationStateChangeReasonCodes.NOTAPPLICABLE);
+    assertEquals(
+      result.payload.applicationState.applicationStateChangeReasonCode,
+      ApplicationStateChangeReasonCodes.NOTAPPLICABLE,
+    );
     assertEquals(result.payload.applicationState.applicationStateChangeReason, "Another reason");
     assertEquals(result.payload.applicationState.applicationBrand, undefined);
   }

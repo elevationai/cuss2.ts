@@ -1,15 +1,18 @@
 import { EventEmitter } from "events";
 import {
-	ApplicationData,
-	ApplicationDataMeta,
-	ApplicationDataPayload,
-	ApplicationState,
-	ApplicationTransfer, BaggageData, CommonUsePaymentMessage, CUSS2BiometricsDomainCommonUseBiometricMessage,
-	CUSS2IlluminationDomainIlluminationData,
-	DataRecordList,
-	MessageCodes,
-	PlatformDirectives,
-	ScreenResolution,
+  ApplicationData,
+  ApplicationDataMeta,
+  ApplicationDataPayload,
+  ApplicationState,
+  ApplicationTransfer,
+  BaggageData,
+  CommonUsePaymentMessage,
+  CUSS2BiometricsDomainCommonUseBiometricMessage,
+  CUSS2IlluminationDomainIlluminationData,
+  DataRecordList,
+  MessageCodes,
+  PlatformDirectives,
+  ScreenResolution,
 } from "cuss2-typescript-models";
 
 export class LogMessage {
@@ -45,7 +48,7 @@ export const helpers = {
     const out: Record<string, string> = {};
     helpers.splitAndFilter(text, delimiter1).forEach((p) => {
       const [k, v] = p.split(delimiter2);
-			if (v && k) out[k] = v;
+      if (v && k) out[k] = v;
     });
     return out;
   },
@@ -97,15 +100,21 @@ const criticalErrors = [
 ];
 
 const isDataRecord = (dataRecordObject: unknown): dataRecordObject is DataRecordList => {
-  return Array.isArray(dataRecordObject) && dataRecordObject.length > 0 && 'data' in dataRecordObject[0];
+  return Array.isArray(dataRecordObject) && dataRecordObject.length > 0 && "data" in dataRecordObject[0];
 };
 
 interface BuildOptions {
   componentID?: string;
   deviceID?: string;
-  dataObj?: ApplicationState | ApplicationTransfer | DataRecordList | ScreenResolution
-		| CUSS2IlluminationDomainIlluminationData | BaggageData | CommonUsePaymentMessage
-		| CUSS2BiometricsDomainCommonUseBiometricMessage;
+  dataObj?:
+    | ApplicationState
+    | ApplicationTransfer
+    | DataRecordList
+    | ScreenResolution
+    | CUSS2IlluminationDomainIlluminationData
+    | BaggageData
+    | CommonUsePaymentMessage
+    | CUSS2BiometricsDomainCommonUseBiometricMessage;
 }
 
 export const Build = {
@@ -129,29 +138,37 @@ export const Build = {
 
     const payload = {} as ApplicationDataPayload;
 
-    if (dataObj && "applicationStateCode" in dataObj)
-			payload.applicationState = dataObj;
+    if (dataObj && "applicationStateCode" in dataObj) {
+      payload.applicationState = dataObj;
+    }
 
-    if (dataObj && "targetApplicationID" in dataObj)
-			payload.applicationTransfer = dataObj;
+    if (dataObj && "targetApplicationID" in dataObj) {
+      payload.applicationTransfer = dataObj;
+    }
 
-    if (isDataRecord(dataObj))
-			payload.dataRecords = dataObj;
+    if (isDataRecord(dataObj)) {
+      payload.dataRecords = dataObj;
+    }
 
-    if (dataObj && "vertical" in dataObj)
+    if (dataObj && "vertical" in dataObj) {
       payload.screenResolution = dataObj;
+    }
 
-    if (dataObj && "lightColor" in dataObj)
-			payload.illuminationData = dataObj;
+    if (dataObj && "lightColor" in dataObj) {
+      payload.illuminationData = dataObj;
+    }
 
-    if (dataObj && "baggageMeasurements" in dataObj)
-			payload.bagdropData = dataObj;
+    if (dataObj && "baggageMeasurements" in dataObj) {
+      payload.bagdropData = dataObj;
+    }
 
-    if (dataObj && "ePaymentMessage" in dataObj)
-			payload.paymentData = dataObj;
+    if (dataObj && "ePaymentMessage" in dataObj) {
+      payload.paymentData = dataObj;
+    }
 
-    if (dataObj && "biometricProviderMessage" in dataObj)
-			payload.biometricData = dataObj;
+    if (dataObj && "biometricProviderMessage" in dataObj) {
+      payload.biometricData = dataObj;
+    }
 
     return { meta, payload } as ApplicationData;
   },

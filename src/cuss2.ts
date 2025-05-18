@@ -108,39 +108,39 @@ export class Cuss2 extends EventEmitter {
     return this._currentState.current;
   }
 
-	private constructor(connection: Connection) {
-		super();
-		this.connection = connection;
-		// Subscribe to messages from the CUSS 2 platform
-		connection.on("message", (e) => this._handleWebSocketMessage(e));
-		connection.on("open", () => this._initialize());
-	}
+  private constructor(connection: Connection) {
+    super();
+    this.connection = connection;
+    // Subscribe to messages from the CUSS 2 platform
+    connection.on("message", (e) => this._handleWebSocketMessage(e));
+    connection.on("open", () => this._initialize());
+  }
 
-	static async connect(
-		wss: string,
-		oauth: string,
-		deviceID: string = "00000000-0000-0000-0000-000000000000",
-		client_id: string,
-		client_secret: string
-	): Promise<Cuss2> {
-		const connection = await Connection.connect(
-			wss,
-			oauth,
-			deviceID,
-			client_id,
-			client_secret,
-		);
-		const cuss2 = new Cuss2(connection);
-		await cuss2._initialize();
-		return cuss2;
-	}
+  static async connect(
+    wss: string,
+    oauth: string,
+    deviceID: string = "00000000-0000-0000-0000-000000000000",
+    client_id: string,
+    client_secret: string,
+  ): Promise<Cuss2> {
+    const connection = await Connection.connect(
+      wss,
+      oauth,
+      deviceID,
+      client_id,
+      client_secret,
+    );
+    const cuss2 = new Cuss2(connection);
+    await cuss2._initialize();
+    return cuss2;
+  }
 
-	async _initialize(): Promise<undefined> {
+  async _initialize(): Promise<undefined> {
     log("info", "Getting Environment Information");
     const level = await this.api.getEnvironment();
 
     // hydrate device id if none provided
-		const deviceID = this.connection.deviceID
+    const deviceID = this.connection.deviceID;
     if (deviceID == "00000000-0000-0000-0000-000000000000" || deviceID == null) {
       this.connection.deviceID = level.deviceID;
     }
@@ -471,9 +471,7 @@ export class Cuss2 extends EventEmitter {
       }
     }
 
-    return okToChange
-      ? this.api.staterequest(AppState.AVAILABLE)
-      : Promise.resolve(undefined);
+    return okToChange ? this.api.staterequest(AppState.AVAILABLE) : Promise.resolve(undefined);
   }
 
   requestUnavailableState(): Promise<PlatformData | undefined> {
@@ -491,9 +489,7 @@ export class Cuss2 extends EventEmitter {
       }
     }
 
-    return okToChange
-      ? this.api.staterequest(AppState.UNAVAILABLE)
-      : Promise.resolve(undefined);
+    return okToChange ? this.api.staterequest(AppState.UNAVAILABLE) : Promise.resolve(undefined);
   }
 
   requestStoppedState(): Promise<PlatformData | undefined> {
@@ -503,9 +499,7 @@ export class Cuss2 extends EventEmitter {
   requestActiveState(): Promise<PlatformData | undefined> {
     const okToChange = this.state === AppState.AVAILABLE ||
       this.state === AppState.ACTIVE;
-    return okToChange
-      ? this.api.staterequest(AppState.ACTIVE)
-      : Promise.resolve(undefined);
+    return okToChange ? this.api.staterequest(AppState.ACTIVE) : Promise.resolve(undefined);
   }
 
   async requestReload(): Promise<boolean> {

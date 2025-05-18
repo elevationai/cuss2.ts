@@ -1,19 +1,10 @@
-import {
-  assertEquals,
-  assertExists,
-  assertRejects,
-  assertStringIncludes,
-  fail,
-} from "jsr:@std/assert";
+import { assertEquals, assertExists, assertRejects, assertStringIncludes, fail } from "jsr:@std/assert";
 import { delay } from "jsr:@std/async/delay";
 
 import { Connection, global } from "./connection.ts";
 import { AuthenticationError } from "./models/Errors.ts";
 import { PlatformResponseError } from "./models/platformResponseError.ts";
-import {
-  MessageCodes,
-  PlatformDirectives
-} from "cuss2-typescript-models";
+import { MessageCodes, PlatformDirectives } from "cuss2-typescript-models";
 
 // Mock for the WebSocket class
 class MockWebSocket {
@@ -22,7 +13,7 @@ class MockWebSocket {
   static CLOSING = 2;
   static CLOSED = 3;
 
-  url: string = '';
+  url: string = "";
   readyState: number = MockWebSocket.CONNECTING;
 
   // Event handlers
@@ -35,7 +26,7 @@ class MockWebSocket {
   sentMessages: string[] = [];
 
   // Methods
-  close(code = 1000, reason = ''): void {
+  close(code = 1000, reason = ""): void {
     this.readyState = MockWebSocket.CLOSED;
     if (this.onclose) {
       const closeEvent = {
@@ -43,7 +34,7 @@ class MockWebSocket {
         wasClean: true,
         code,
         reason,
-        target: this
+        target: this,
       } as unknown as CloseEvent;
       this.onclose(closeEvent);
     }
@@ -63,7 +54,7 @@ class MockWebSocket {
       const messageEvent = {
         type: "message",
         data,
-        target: this
+        target: this,
       } as unknown as MessageEvent;
       this.onmessage(messageEvent);
     }
@@ -75,7 +66,7 @@ class MockWebSocket {
     if (this.onopen) {
       const openEvent = {
         type: "open",
-        target: this
+        target: this,
       } as unknown as Event;
       this.onopen(openEvent);
     }
@@ -109,127 +100,109 @@ const testBaseUrl = "https://example.com/api";
 const testTokenUrl = "https://example.com/api/oauth/token";
 const testToken = "test-token";
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function mockGlobal(fn: () => Promise<unknown> | unknown): () => Promise<void> {
-	return async() => {
-		try	{
-			await fn();
-		}
-		finally {
-			global.WebSocket = globalThis.WebSocket;
-			global.fetch = globalThis.fetch;
-			global.setTimeout = globalThis.setTimeout.bind(globalThis);
-			global.clearTimeout = globalThis.clearTimeout.bind(globalThis);
-		}
-	};
+  return async () => {
+    try {
+      await fn();
+    } finally {
+      global.WebSocket = globalThis.WebSocket;
+      global.fetch = globalThis.fetch;
+      global.setTimeout = globalThis.setTimeout.bind(globalThis);
+      global.clearTimeout = globalThis.clearTimeout.bind(globalThis);
+    }
+  };
 }
-function mockWebSocket(action?: (ws: MockWebSocket) => ((() => void) | undefined)): MockWebSocket {
-	const mockWs = new MockWebSocket();
-	function creator(url: string) {
-		mockWs.url = url;
-		const a = action && action(mockWs)
-		const deferredWork = (a) || (() => mockWs._simulateOpen());
-		delay(10).then(deferredWork);
-		return mockWs;
-	}
-	creator.prototype = MockWebSocket.prototype;
+function mockWebSocket(action?: (ws: MockWebSocket) => (() => void) | undefined): MockWebSocket {
+  const mockWs = new MockWebSocket();
+  function creator(url: string) {
+    mockWs.url = url;
+    const a = action && action(mockWs);
+    const deferredWork = a || (() => mockWs._simulateOpen());
+    delay(10).then(deferredWork);
+    return mockWs;
+  }
+  creator.prototype = MockWebSocket.prototype;
 
-	//@ts-ignore - Mock WebSocket for testing
-	global.WebSocket = creator
-	return mockWs;
+  //@ts-ignore - Mock WebSocket for testing
+  global.WebSocket = creator;
+  return mockWs;
 }
-function mockFetch(options?: { action?: () => void, status?: number, token?: string, expires_in?: number }) {
-	const { action = () => {}, status = 200, token = testToken, expires_in = 3600 } = options || {};
+function mockFetch(options?: { action?: () => void; status?: number; token?: string; expires_in?: number }) {
+  const { action = () => {}, status = 200, token = testToken, expires_in = 3600 } = options || {};
 
-	global.fetch = (() => {
-		action();
-		return Promise.resolve(new MockResponse(status, {
-			access_token: token,
-			expires_in,
-			token_type: "Bearer"
-		}) as unknown as Response);
-	});
+  global.fetch = () => {
+    action();
+    return Promise.resolve(
+      new MockResponse(status, {
+        access_token: token,
+        expires_in,
+        token_type: "Bearer",
+      }) as unknown as Response,
+    );
+  };
 }
 
 // Tests for the Connection class
 
 // Test for Connection.authorize
-Deno.test("Connection.authorize should get and return a token", mockGlobal(async () => {
-	global.fetch = ((url: string | URL | Request, options?: RequestInit) => {
-		// Verify correct URL and options
-		assertEquals(url, testTokenUrl);
-		assertEquals(options?.method, "POST");
-		// Type assertion for header key
-		assertEquals(
-			(options?.headers as Record<string, string>)?.["Content-Type"],
-			"application/x-www-form-urlencoded"
-		);
+Deno.test(
+  "Connection.authorize should get and return a token",
+  mockGlobal(async () => {
+    global.fetch = (url: string | URL | Request, options?: RequestInit) => {
+      // Verify correct URL and options
+      assertEquals(url, testTokenUrl);
+      assertEquals(options?.method, "POST");
+      // Type assertion for header key
+      assertEquals(
+        (options?.headers as Record<string, string>)?.["Content-Type"],
+        "application/x-www-form-urlencoded",
+      );
 
-		// Extract and verify body parameters
-		const bodyParams = new URLSearchParams(options?.body as string);
-		assertEquals(bodyParams.get("client_id"), testClientId);
-		assertEquals(bodyParams.get("client_secret"), testClientSecret);
-		assertEquals(bodyParams.get("grant_type"), "client_credentials");
+      // Extract and verify body parameters
+      const bodyParams = new URLSearchParams(options?.body as string);
+      assertEquals(bodyParams.get("client_id"), testClientId);
+      assertEquals(bodyParams.get("client_secret"), testClientSecret);
+      assertEquals(bodyParams.get("grant_type"), "client_credentials");
 
-		// Return a successful response
-		return Promise.resolve(new MockResponse(200, {
-			access_token: testToken,
-			expires_in: 3600,
-			token_type: "Bearer"
-		}) as unknown as Response);
-	});
+      // Return a successful response
+      return Promise.resolve(
+        new MockResponse(200, {
+          access_token: testToken,
+          expires_in: 3600,
+          token_type: "Bearer",
+        }) as unknown as Response,
+      );
+    };
 
-	const result = await Connection.authorize(
-		testTokenUrl,
-		testClientId,
-		testClientSecret
-	);
+    const result = await Connection.authorize(
+      testTokenUrl,
+      testClientId,
+      testClientSecret,
+    );
 
-	assertEquals(result.access_token, testToken);
-	assertEquals(result.expires_in, 3600);
-	assertEquals(result.token_type, "Bearer");
-}));
+    assertEquals(result.access_token, testToken);
+    assertEquals(result.expires_in, 3600);
+    assertEquals(result.token_type, "Bearer");
+  }),
+);
 
-Deno.test("Connection.authorize should throw AuthenticationError for 401 responses", mockGlobal(async () => {
-  global.fetch = (() => {
-    return Promise.resolve(new MockResponse(401, { error: "invalid_client" }) as unknown as Response);
-  });
+Deno.test(
+  "Connection.authorize should throw AuthenticationError for 401 responses",
+  mockGlobal(async () => {
+    global.fetch = () => {
+      return Promise.resolve(new MockResponse(401, { error: "invalid_client" }) as unknown as Response);
+    };
 
-  // Verify that calling the method throws the expected error
-  await assertRejects(
-    async () => {
-      await Connection.authorize(testTokenUrl, testClientId, testClientSecret);
-    },
-    AuthenticationError,
-    "Invalid Credentials"
-  );
-}));
+    // Verify that calling the method throws the expected error
+    await assertRejects(
+      async () => {
+        await Connection.authorize(testTokenUrl, testClientId, testClientSecret);
+      },
+      AuthenticationError,
+      "Invalid Credentials",
+    );
+  }),
+);
 
 // Tests for private helper methods
 Deno.test("_cleanBaseURL should remove query parameters and trailing slashes", () => {
@@ -238,7 +211,7 @@ Deno.test("_cleanBaseURL should remove query parameters and trailing slashes", (
     testTokenUrl,
     testDeviceId,
     testClientId,
-    testClientSecret
+    testClientSecret,
   );
 
   // @ts-ignore - Accessing private method for testing
@@ -257,7 +230,7 @@ Deno.test("_buildWebSocketURL should create correct WebSocket URL", () => {
     testTokenUrl,
     testDeviceId,
     testClientId,
-    testClientSecret
+    testClientSecret,
   );
 
   // @ts-ignore - Accessing private method for testing
@@ -266,22 +239,22 @@ Deno.test("_buildWebSocketURL should create correct WebSocket URL", () => {
   // Test different URL formats
   assertEquals(
     buildWebSocketURL("https://example.com/api"),
-    "wss://example.com/api/platform/subscribe"
+    "wss://example.com/api/platform/subscribe",
   );
 
   assertEquals(
     buildWebSocketURL("http://example.com/api"),
-    "ws://example.com/api/platform/subscribe"
+    "ws://example.com/api/platform/subscribe",
   );
 
   assertEquals(
     buildWebSocketURL("ws://example.com/api"),
-    "ws://example.com/api/platform/subscribe"
+    "ws://example.com/api/platform/subscribe",
   );
 
   assertEquals(
     buildWebSocketURL("wss://example.com/api"),
-    "wss://example.com/api/platform/subscribe"
+    "wss://example.com/api/platform/subscribe",
   );
 });
 
@@ -291,7 +264,7 @@ Deno.test("Connection constructor should set URLs correctly", () => {
     testTokenUrl,
     testDeviceId,
     testClientId,
-    testClientSecret
+    testClientSecret,
   );
 
   // Check that internal state is set correctly
@@ -306,7 +279,7 @@ Deno.test("Connection constructor should set URLs correctly", () => {
     testTokenUrl,
     testDeviceId,
     testClientId,
-    testClientSecret
+    testClientSecret,
   );
 
   // @ts-ignore - Accessing private property for testing
@@ -315,449 +288,487 @@ Deno.test("Connection constructor should set URLs correctly", () => {
   assertEquals(wsConnection._socketURL, "ws://example.com/api/platform/subscribe");
 });
 
-Deno.test("_authenticate should fetch token and set access_token", mockGlobal(async () => {
-  let timeoutCallback: TimerHandler | undefined = undefined;
-  let timeoutDuration : number | undefined = 0;
+Deno.test(
+  "_authenticate should fetch token and set access_token",
+  mockGlobal(async () => {
+    let timeoutCallback: TimerHandler | undefined = undefined;
+    let timeoutDuration: number | undefined = 0;
 
-  const tokenResponse = {
-    access_token: testToken,
-    expires_in: 3600,
-    token_type: "Bearer"
-  };
-
-  global.fetch = (() => {
-    return Promise.resolve(new MockResponse(200, tokenResponse) as unknown as Response);
-  });
-
-	global.setTimeout = (callback: TimerHandler, timeout?: number): number => {
-		timeoutCallback = callback;
-		timeoutDuration = timeout;
-
-		return 1 as ReturnType<typeof setTimeout>; // Explicitly match the expected return type
-	};
-
-  const connection = new Connection(
-    testBaseUrl,
-    testTokenUrl,
-    testDeviceId,
-    testClientId,
-    testClientSecret
-  );
-
-  // @ts-ignore - Accessing private method for testing
-  await connection._authenticateAndQueueTokenRefresh();
-
-  assertEquals(connection.access_token, testToken);
-
-  assertEquals(timeoutDuration, 3599000); // (3600 - 1) * 1000
-  assertExists(timeoutCallback);
-
-  // @ts-ignore - Accessing private property for testing
-  assertEquals(connection._auth.url, testTokenUrl);
-  // @ts-ignore - Accessing private property for testing
-  assertEquals(connection._auth.client_id, testClientId);
-  // @ts-ignore - Accessing private property for testing
-  assertEquals(connection._auth.client_secret, testClientSecret);
-}));
-
-Deno.test("_authenticateAndQueueTokenRefresh should throw error when authorization fails", mockGlobal(async () => {
-  global.fetch = (() => {
-    return Promise.resolve(new MockResponse(401, { error: "invalid_client" }) as unknown as Response);
-  });
-
-  const connection = new Connection(
-    testBaseUrl,
-    testTokenUrl,
-    testDeviceId,
-    testClientId,
-    testClientSecret
-  );
-
-  // Verify authenticate throws error
-  await assertRejects(
-    async () => {
-      // @ts-ignore - Accessing private method for testing
-      await connection._authenticateAndQueueTokenRefresh();
-    },
-    AuthenticationError,
-    "Invalid Credentials"
-  );
-}));
-
-// Test token refresh with zero expiration
-Deno.test("_authenticateAndQueueTokenRefresh should not set refresher timer when expires_in is zero", mockGlobal(async () => {
-  let fetchCalled = false;
-	mockFetch({
-		status: 200,
-		action: () => fetchCalled = true,
-		token: 'short-lived-token',
-		expires_in: 0
-	});
-
-  const connection = new Connection(
-    testBaseUrl,
-    testTokenUrl,
-    testDeviceId,
-    testClientId,
-    testClientSecret
-  );
-
-  // @ts-ignore - Accessing private method for testing
-  await connection._authenticateAndQueueTokenRefresh();
-
-  // Verify fetch was called
-  assertEquals(fetchCalled, true);
-
-  // Verify access_token was set
-  assertEquals(connection.access_token, "short-lived-token");
-
-  // Verify no timeout is set due to expires_in being 0
-  // @ts-ignore - Accessing private property for testing
-  assertEquals(connection._refresher, null);
-}));
-
-Deno.test("_authenticateAndQueueTokenRefresh should clear previous timeout when called again", mockGlobal(async () => {
-  let timeoutCleared = false;
-  const mockTimeoutId = 12345;
-
-  global.fetch = (() => {
-    return Promise.resolve(new MockResponse(200, {
+    const tokenResponse = {
       access_token: testToken,
       expires_in: 3600,
-      token_type: "Bearer"
-    }) as unknown as Response);
-  });
+      token_type: "Bearer",
+    };
 
-  global.setTimeout = () => {
-    return mockTimeoutId as unknown as ReturnType<typeof setTimeout>;
-  };
+    global.fetch = () => {
+      return Promise.resolve(new MockResponse(200, tokenResponse) as unknown as Response);
+    };
 
-  global.clearTimeout = (id: number | undefined) => {
-    if (id === mockTimeoutId) {
-      timeoutCleared = true;
-    }
-  };
+    global.setTimeout = (callback: TimerHandler, timeout?: number): number => {
+      timeoutCallback = callback;
+      timeoutDuration = timeout;
 
-  const connection = new Connection(
-    testBaseUrl,
-    testTokenUrl,
-    testDeviceId,
-    testClientId,
-    testClientSecret
-  );
+      return 1 as ReturnType<typeof setTimeout>; // Explicitly match the expected return type
+    };
 
-  // @ts-ignore - Accessing private property for testing
-  connection._refresher = mockTimeoutId as unknown as ReturnType<typeof setTimeout>;
+    const connection = new Connection(
+      testBaseUrl,
+      testTokenUrl,
+      testDeviceId,
+      testClientId,
+      testClientSecret,
+    );
 
-  // @ts-ignore - Accessing private method for testing
-  await connection._authenticateAndQueueTokenRefresh();
+    // @ts-ignore - Accessing private method for testing
+    await connection._authenticateAndQueueTokenRefresh();
 
-  assertEquals(timeoutCleared, true);
-}));
+    assertEquals(connection.access_token, testToken);
+
+    assertEquals(timeoutDuration, 3599000); // (3600 - 1) * 1000
+    assertExists(timeoutCallback);
+
+    // @ts-ignore - Accessing private property for testing
+    assertEquals(connection._auth.url, testTokenUrl);
+    // @ts-ignore - Accessing private property for testing
+    assertEquals(connection._auth.client_id, testClientId);
+    // @ts-ignore - Accessing private property for testing
+    assertEquals(connection._auth.client_secret, testClientSecret);
+  }),
+);
+
+Deno.test(
+  "_authenticateAndQueueTokenRefresh should throw error when authorization fails",
+  mockGlobal(async () => {
+    global.fetch = () => {
+      return Promise.resolve(new MockResponse(401, { error: "invalid_client" }) as unknown as Response);
+    };
+
+    const connection = new Connection(
+      testBaseUrl,
+      testTokenUrl,
+      testDeviceId,
+      testClientId,
+      testClientSecret,
+    );
+
+    // Verify authenticate throws error
+    await assertRejects(
+      async () => {
+        // @ts-ignore - Accessing private method for testing
+        await connection._authenticateAndQueueTokenRefresh();
+      },
+      AuthenticationError,
+      "Invalid Credentials",
+    );
+  }),
+);
+
+// Test token refresh with zero expiration
+Deno.test(
+  "_authenticateAndQueueTokenRefresh should not set refresher timer when expires_in is zero",
+  mockGlobal(async () => {
+    let fetchCalled = false;
+    mockFetch({
+      status: 200,
+      action: () => fetchCalled = true,
+      token: "short-lived-token",
+      expires_in: 0,
+    });
+
+    const connection = new Connection(
+      testBaseUrl,
+      testTokenUrl,
+      testDeviceId,
+      testClientId,
+      testClientSecret,
+    );
+
+    // @ts-ignore - Accessing private method for testing
+    await connection._authenticateAndQueueTokenRefresh();
+
+    // Verify fetch was called
+    assertEquals(fetchCalled, true);
+
+    // Verify access_token was set
+    assertEquals(connection.access_token, "short-lived-token");
+
+    // Verify no timeout is set due to expires_in being 0
+    // @ts-ignore - Accessing private property for testing
+    assertEquals(connection._refresher, null);
+  }),
+);
+
+Deno.test(
+  "_authenticateAndQueueTokenRefresh should clear previous timeout when called again",
+  mockGlobal(async () => {
+    let timeoutCleared = false;
+    const mockTimeoutId = 12345;
+
+    global.fetch = () => {
+      return Promise.resolve(
+        new MockResponse(200, {
+          access_token: testToken,
+          expires_in: 3600,
+          token_type: "Bearer",
+        }) as unknown as Response,
+      );
+    };
+
+    global.setTimeout = () => {
+      return mockTimeoutId as unknown as ReturnType<typeof setTimeout>;
+    };
+
+    global.clearTimeout = (id: number | undefined) => {
+      if (id === mockTimeoutId) {
+        timeoutCleared = true;
+      }
+    };
+
+    const connection = new Connection(
+      testBaseUrl,
+      testTokenUrl,
+      testDeviceId,
+      testClientId,
+      testClientSecret,
+    );
+
+    // @ts-ignore - Accessing private property for testing
+    connection._refresher = mockTimeoutId as unknown as ReturnType<typeof setTimeout>;
+
+    // @ts-ignore - Accessing private method for testing
+    await connection._authenticateAndQueueTokenRefresh();
+
+    assertEquals(timeoutCleared, true);
+  }),
+);
 
 // Tests for _connect method
 // Skip test that's causing hang issues
-Deno.test("Connection.connect should authenticate and create a websocket connection", mockGlobal(async () => {
-  // Track if authenticate was called
-  let authenticateCalled = false;
-  let webSocketConstructorCalled = false;
+Deno.test(
+  "Connection.connect should authenticate and create a websocket connection",
+  mockGlobal(async () => {
+    // Track if authenticate was called
+    let authenticateCalled = false;
+    let webSocketConstructorCalled = false;
 
-	mockFetch({
-		status: 200,
-		action: () => authenticateCalled = true
-	});
-  const mockWs = mockWebSocket((_ws: MockWebSocket) => {
-		webSocketConstructorCalled = true
-		return undefined;
-	});
+    mockFetch({
+      status: 200,
+      action: () => authenticateCalled = true,
+    });
+    const mockWs = mockWebSocket((_ws: MockWebSocket) => {
+      webSocketConstructorCalled = true;
+      return undefined;
+    });
 
-  const connection = await Connection.connect(
-    testBaseUrl,
-    testTokenUrl,
-    testDeviceId,
-    testClientId,
-    testClientSecret
-  );
+    const connection = await Connection.connect(
+      testBaseUrl,
+      testTokenUrl,
+      testDeviceId,
+      testClientId,
+      testClientSecret,
+    );
 
-	// @ts-ignore - Accessing private property for testing
-	assertEquals(connection._socket, mockWs);
-	assertEquals(authenticateCalled, true);
-	assertEquals(webSocketConstructorCalled, true)
-	assertEquals(mockWs.url, `wss://example.com/api/platform/subscribe`)
-}));
+    // @ts-ignore - Accessing private property for testing
+    assertEquals(connection._socket, mockWs);
+    assertEquals(authenticateCalled, true);
+    assertEquals(webSocketConstructorCalled, true);
+    assertEquals(mockWs.url, `wss://example.com/api/platform/subscribe`);
+  }),
+);
 
 // Test WebSocket error handling
-Deno.test("Connection should emit error events when socket.onerror is triggered", mockGlobal(async () => {
+Deno.test(
+  "Connection should emit error events when socket.onerror is triggered",
+  mockGlobal(async () => {
+    mockFetch();
+    const mockWs = mockWebSocket();
+
+    const connection = await Connection.connect(
+      testBaseUrl,
+      testTokenUrl,
+      testDeviceId,
+      testClientId,
+      testClientSecret,
+    );
+
+    // Track if error event is emitted
+    let errorEventData: unknown = null;
+    connection.once("error", (data) => {
+      errorEventData = data;
+    });
+
+    // Create an error event
+    const errorEvent = { type: "error", message: "Test error" } as unknown as Event;
+
+    // Trigger the onerror handler
+    if (mockWs.onerror) {
+      mockWs.onerror(errorEvent);
+    }
+
+    // Verify error event was emitted with correct data
+    assertEquals(errorEventData, errorEvent);
+  }),
+);
+
+Deno.test(
+  "Connection.connect should return true if socket already exists and is open",
+  mockGlobal(async () => {
+    let fetchCalled = false;
+    mockFetch({ status: 200, action: () => fetchCalled = true });
+    const mockWs = mockWebSocket();
+
+    const connection = await Connection.connect(
+      testBaseUrl,
+      testTokenUrl,
+      testDeviceId,
+      testClientId,
+      testClientSecret,
+    );
+
+    // Reset fetch called flag
+    fetchCalled = false;
+
+    // Call _connect again - should return true without creating a new socket
+    // @ts-ignore - Accessing private method for testing
+    const result = await connection._createWebSocketAndAttachEventHandlers();
+
+    // Verify connection promise resolved to true without calling fetch
+    assertEquals(result, true); // With our mock WebSocket implementation, this should be true
+    assertEquals(fetchCalled, false);
+
+    // Verify same socket is still there
+    // @ts-ignore - Accessing private property for testing
+    assertEquals(connection._socket, mockWs);
+  }),
+);
+
+Deno.test(
+  "_connect should handle WebSocket message events",
+  mockGlobal(async () => {
+    mockFetch();
+    const mockWs = mockWebSocket();
+
+    const connection = await Connection.connect(
+      testBaseUrl,
+      testTokenUrl,
+      testDeviceId,
+      testClientId,
+      testClientSecret,
+    );
+
+    // Track emitted events
+    const emittedEvents: { event: string; data: unknown }[] = [];
+
+    // @ts-ignore - Event types are not properly defined for testing
+    connection.on("message", (data) => {
+      emittedEvents.push({ event: "message", data });
+    });
+
+    // @ts-ignore - Event types are not properly defined for testing
+    connection.on("ping", (data) => {
+      emittedEvents.push({ event: "ping", data });
+    });
+
+    // @ts-ignore - Event types are not properly defined for testing
+    connection.on("ack", (data) => {
+      emittedEvents.push({ event: "ack", data });
+    });
+
+    // Simulate receiving a message
+    mockWs.simulateMessage(JSON.stringify({
+      meta: {
+        requestID: "test-request-id",
+        deviceID: testDeviceId,
+      },
+      payload: { test: true },
+    }));
+
+    // Verify message event was emitted
+    assertEquals(emittedEvents.length, 1);
+    assertEquals(emittedEvents[0]?.event, "message");
+
+    // Simulate receiving a ping message
+    emittedEvents.length = 0; // Clear events
+    mockWs.simulateMessage(JSON.stringify({ ping: Date.now() }));
+
+    // Verify ping event was emitted and pong sent
+    assertEquals(emittedEvents.length, 1);
+    assertEquals(emittedEvents[0]?.event, "ping");
+    assertEquals(mockWs.sentMessages.length, 1);
+    if (mockWs.sentMessages[0]) {
+      assertStringIncludes(mockWs.sentMessages[0], "pong");
+    }
+
+    // Simulate receiving an ack message
+    emittedEvents.length = 0; // Clear events
+    mockWs.simulateMessage(JSON.stringify({ ackCode: 200 }));
+
+    // Verify ack event was emitted
+    assertEquals(emittedEvents.length, 1);
+    assertEquals(emittedEvents[0]?.event, "ack");
+  }),
+);
+
+// Tests for Connection.connect static method
+Deno.test(
+  "Connection.connect should connect successfully",
+  mockGlobal(async () => {
+    // Create a mock WebSocket
+    const mockWs = mockWebSocket();
+    mockFetch();
+
+    // Start connection process
+    const connection = await Connection.connect(
+      testBaseUrl,
+      testTokenUrl,
+      testDeviceId,
+      testClientId,
+      testClientSecret,
+    );
+
+    // Verify connection succeeded
+    assertExists(connection);
+    assertEquals(connection instanceof Connection, true);
+    assertEquals(connection.deviceID, testDeviceId);
+    assertEquals(connection.access_token, testToken);
+
+    // @ts-ignore - Accessing private property for testing
+    assertEquals(connection._socket, mockWs);
+  }),
+);
+
+Deno.test(
+  "Connection.connect should retry on non-authentication errors",
+  mockGlobal(async () => {
+    let attemptCount = 0;
+
+    mockFetch();
+
+    // Create a mock WebSocket
+    mockWebSocket((ws) => {
+      attemptCount++;
+      if (attemptCount === 2) return;
+      return () => {
+        ws.close(4001, "Testing Failer");
+      };
+    });
+
+    // Start connection process
+    const connection = await Connection.connect(
+      testBaseUrl,
+      testTokenUrl,
+      testDeviceId,
+      testClientId,
+      testClientSecret,
+      {
+        minTimeout: 10,
+      },
+    );
+
+    // Verify connection succeeded after retry
+    assertExists(connection);
+    assertEquals(connection instanceof Connection, true);
+
+    assertEquals(attemptCount, 2); // Verify we retried once
+  }),
+);
+
+// Test abnormal websocket closures
+Deno.test(
+  "Connection should emit close events for abnormal WebSocket closures",
+  mockGlobal(async () => {
+    mockFetch();
+    const mockWs = mockWebSocket();
+
+    const connection = await Connection.connect(
+      testBaseUrl,
+      testTokenUrl,
+      testDeviceId,
+      testClientId,
+      testClientSecret,
+    );
+
+    // Track if close event is emitted
+    let closeEventFired = false;
+    let closeEventObj: CloseEvent | undefined;
+
+    // @ts-ignore - Event types are not properly defined for testing
+    connection.once("close", (event) => {
+      closeEventFired = true;
+      closeEventObj = event;
+    });
+
+    // Create a close event with non-1000 code
+    const closeEvent = {
+      type: "close",
+      code: 1006, // Abnormal closure
+      reason: "Connection lost",
+      wasClean: false,
+      target: mockWs,
+    } as unknown as CloseEvent;
+
+    // Trigger the onclose handler
+    if (mockWs.onclose) {
+      mockWs.onclose(closeEvent);
+    }
+
+    // Verify close event was emitted
+    assertEquals(closeEventFired, true);
+    assertExists(closeEventObj);
+    assertEquals(closeEventObj.code, 1006);
+    assertEquals(closeEventObj.reason, "Connection lost");
+  }),
+);
+
+Deno.test(
+  "Connection.connect should throw immediately on authentication errors",
+  mockGlobal(async () => {
+    global.fetch = () => {
+      return Promise.resolve(new MockResponse(401, { error: "invalid_client" }) as unknown as Response);
+    };
+
+    // @ts-ignore - Mock WebSocket for testing
+    global.WebSocket = function (url: string) {
+      return new MockWebSocket() as unknown as WebSocket;
+    } as unknown as typeof WebSocket;
+
+    // Mock setTimeout to execute callbacks immediately and synchronously
+    global.setTimeout = (callback: TimerHandler, _timeout?: number) => {
+      // Execute callback immediately if it's a function
+      if (typeof callback === "function") {
+        callback();
+      }
+      return 1 as unknown as ReturnType<typeof setTimeout>;
+    };
+
+    // Verify authentication error is thrown without retry
+    await assertRejects(
+      async () => {
+        await Connection.connect(
+          testBaseUrl,
+          testTokenUrl,
+          testDeviceId,
+          testClientId,
+          testClientSecret,
+        );
+      },
+      AuthenticationError,
+      "Invalid Credentials",
+    );
+  }),
+);
+
+// Tests for send method
+Deno.test("send should add missing oauthToken and deviceID to data", async () => {
   mockFetch();
   const mockWs = mockWebSocket();
 
-  const connection = await Connection.connect(
-    testBaseUrl,
-    testTokenUrl,
-    testDeviceId,
-    testClientId,
-    testClientSecret
-  );
-
-  // Track if error event is emitted
-  let errorEventData: unknown = null;
-  connection.once("error", (data) => {
-    errorEventData = data;
-  });
-
-  // Create an error event
-  const errorEvent = { type: "error", message: "Test error" } as unknown as Event;
-
-  // Trigger the onerror handler
-  if (mockWs.onerror) {
-    mockWs.onerror(errorEvent);
-  }
-
-  // Verify error event was emitted with correct data
-  assertEquals(errorEventData, errorEvent);
-}));
-
-Deno.test("Connection.connect should return true if socket already exists and is open", mockGlobal(async () => {
-  let fetchCalled = false;
-	mockFetch({ status: 200, action: () => fetchCalled = true });
-  const mockWs = mockWebSocket();
-
-  const connection = await Connection.connect(
-    testBaseUrl,
-    testTokenUrl,
-    testDeviceId,
-    testClientId,
-    testClientSecret
-  );
-
-  // Reset fetch called flag
-  fetchCalled = false;
-
-  // Call _connect again - should return true without creating a new socket
-  // @ts-ignore - Accessing private method for testing
-  const result = await connection._createWebSocketAndAttachEventHandlers();
-
-  // Verify connection promise resolved to true without calling fetch
-  assertEquals(result, true);  // With our mock WebSocket implementation, this should be true
-  assertEquals(fetchCalled, false);
-
-  // Verify same socket is still there
-  // @ts-ignore - Accessing private property for testing
-  assertEquals(connection._socket, mockWs);
-}));
-
-Deno.test("_connect should handle WebSocket message events", mockGlobal(async () => {
-	mockFetch();
-  const mockWs = mockWebSocket();
-
-  const connection = await Connection.connect(
-    testBaseUrl,
-    testTokenUrl,
-    testDeviceId,
-    testClientId,
-    testClientSecret
-  );
-
-  // Track emitted events
-  const emittedEvents: { event: string; data: unknown }[] = [];
-
-  // @ts-ignore - Event types are not properly defined for testing
-  connection.on("message", (data) => {
-    emittedEvents.push({ event: "message", data });
-  });
-
-  // @ts-ignore - Event types are not properly defined for testing
-  connection.on("ping", (data) => {
-    emittedEvents.push({ event: "ping", data });
-  });
-
-  // @ts-ignore - Event types are not properly defined for testing
-  connection.on("ack", (data) => {
-    emittedEvents.push({ event: "ack", data });
-  });
-
-  // Simulate receiving a message
-  mockWs.simulateMessage(JSON.stringify({
-    meta: {
-      requestID: "test-request-id",
-      deviceID: testDeviceId
-    },
-    payload: { test: true }
-  }));
-
-  // Verify message event was emitted
-  assertEquals(emittedEvents.length, 1);
-  assertEquals(emittedEvents[0]?.event, "message");
-
-  // Simulate receiving a ping message
-  emittedEvents.length = 0; // Clear events
-  mockWs.simulateMessage(JSON.stringify({ ping: Date.now() }));
-
-  // Verify ping event was emitted and pong sent
-  assertEquals(emittedEvents.length, 1);
-  assertEquals(emittedEvents[0]?.event, "ping");
-  assertEquals(mockWs.sentMessages.length, 1);
-  if (mockWs.sentMessages[0]) {
-    assertStringIncludes(mockWs.sentMessages[0], "pong");
-  }
-
-  // Simulate receiving an ack message
-  emittedEvents.length = 0; // Clear events
-  mockWs.simulateMessage(JSON.stringify({ ackCode: 200 }));
-
-  // Verify ack event was emitted
-  assertEquals(emittedEvents.length, 1);
-  assertEquals(emittedEvents[0]?.event, "ack");
-}));
-
-// Tests for Connection.connect static method
-Deno.test("Connection.connect should connect successfully", mockGlobal(async () => {
-  // Create a mock WebSocket
-  const mockWs = mockWebSocket();
-	mockFetch();
-
-  // Start connection process
-  const connection = await Connection.connect(
-    testBaseUrl,
-    testTokenUrl,
-    testDeviceId,
-    testClientId,
-    testClientSecret
-  );
-
-  // Verify connection succeeded
-  assertExists(connection);
-  assertEquals(connection instanceof Connection, true);
-  assertEquals(connection.deviceID, testDeviceId);
-  assertEquals(connection.access_token, testToken);
-
-  // @ts-ignore - Accessing private property for testing
-  assertEquals(connection._socket, mockWs);
-}));
-
-Deno.test("Connection.connect should retry on non-authentication errors", mockGlobal(async () => {
-	let attemptCount = 0;
-
-	mockFetch();
-
-	// Create a mock WebSocket
-	mockWebSocket((ws) => {
-		attemptCount++;
-		if (attemptCount === 2) return;
-		return () => {
-			ws.close(4001, 'Testing Failer')
-		}
-	});
-
-  // Start connection process
   const connection = await Connection.connect(
     testBaseUrl,
     testTokenUrl,
     testDeviceId,
     testClientId,
     testClientSecret,
-		{
-			minTimeout: 10,
-		}
-  );
-
-	// Verify connection succeeded after retry
-	assertExists(connection);
-	assertEquals(connection instanceof Connection, true);
-
-  assertEquals(attemptCount, 2); // Verify we retried once
-}));
-
-// Test abnormal websocket closures
-Deno.test("Connection should emit close events for abnormal WebSocket closures", mockGlobal(async () => {
-  mockFetch();
-  const mockWs = mockWebSocket();
-
-  const connection = await Connection.connect(
-    testBaseUrl,
-    testTokenUrl,
-    testDeviceId,
-    testClientId,
-    testClientSecret
-  );
-
-  // Track if close event is emitted
-  let closeEventFired = false;
-  let closeEventObj: CloseEvent | undefined;
-
-  // @ts-ignore - Event types are not properly defined for testing
-  connection.once("close", (event) => {
-    closeEventFired = true;
-    closeEventObj = event;
-  });
-
-  // Create a close event with non-1000 code
-  const closeEvent = {
-    type: "close",
-    code: 1006, // Abnormal closure
-    reason: "Connection lost",
-    wasClean: false,
-    target: mockWs
-  } as unknown as CloseEvent;
-
-  // Trigger the onclose handler
-  if (mockWs.onclose) {
-    mockWs.onclose(closeEvent);
-  }
-
-  // Verify close event was emitted
-  assertEquals(closeEventFired, true);
-  assertExists(closeEventObj);
-  assertEquals(closeEventObj.code, 1006);
-  assertEquals(closeEventObj.reason, "Connection lost");
-}));
-
-Deno.test("Connection.connect should throw immediately on authentication errors", mockGlobal(async () => {
-  global.fetch = (() => {
-    return Promise.resolve(new MockResponse(401, { error: "invalid_client" }) as unknown as Response);
-  });
-
-  // @ts-ignore - Mock WebSocket for testing
-  global.WebSocket = function(url: string) {
-    return new MockWebSocket() as unknown as WebSocket;
-  } as unknown as typeof WebSocket;
-
-  // Mock setTimeout to execute callbacks immediately and synchronously
-  global.setTimeout = ((callback: TimerHandler, _timeout?: number) => {
-    // Execute callback immediately if it's a function
-    if (typeof callback === "function") {
-      callback();
-    }
-    return 1 as unknown as ReturnType<typeof setTimeout>;
-  });
-
-  // Verify authentication error is thrown without retry
-  await assertRejects(
-    async () => {
-      await Connection.connect(
-        testBaseUrl,
-        testTokenUrl,
-        testDeviceId,
-        testClientId,
-        testClientSecret
-      );
-    },
-    AuthenticationError,
-    "Invalid Credentials"
-  );
-}));
-
-// Tests for send method
-Deno.test("send should add missing oauthToken and deviceID to data", async () => {
-	mockFetch();
-	const mockWs = mockWebSocket();
-
-  const connection = await Connection.connect(
-    testBaseUrl,
-    testTokenUrl,
-    testDeviceId,
-    testClientId,
-    testClientSecret
   );
 
   // Create test data without oauthToken and deviceID
@@ -765,9 +776,9 @@ Deno.test("send should add missing oauthToken and deviceID to data", async () =>
   const testData = {
     meta: {
       requestID: "test-request-id",
-      directive: PlatformDirectives.PlatformApplicationsStaterequest
+      directive: PlatformDirectives.PlatformApplicationsStaterequest,
     },
-    payload: { test: true }
+    payload: { test: true },
   };
 
   // @ts-ignore - Testing with simplified data structure
@@ -790,16 +801,16 @@ Deno.test("send should add missing oauthToken and deviceID to data", async () =>
 });
 
 Deno.test("send should not override existing oauthToken and deviceID", async () => {
-	// Create a mock WebSocket
-	const mockWs = mockWebSocket();
-	mockFetch();
+  // Create a mock WebSocket
+  const mockWs = mockWebSocket();
+  mockFetch();
 
   const connection = await Connection.connect(
     testBaseUrl,
     testTokenUrl,
     testDeviceId,
     testClientId,
-    testClientSecret
+    testClientSecret,
   );
 
   // Set access token (this should not be used)
@@ -814,9 +825,9 @@ Deno.test("send should not override existing oauthToken and deviceID", async () 
       requestID: "test-request-id",
       directive: PlatformDirectives.PlatformApplicationsStaterequest,
       oauthToken: customToken,
-      deviceID: customDeviceId
+      deviceID: customDeviceId,
     },
-    payload: { test: true }
+    payload: { test: true },
   };
 
   // Send the data
@@ -843,7 +854,7 @@ Deno.test("send should do nothing if socket is not initialized", () => {
     testTokenUrl,
     testDeviceId,
     testClientId,
-    testClientSecret
+    testClientSecret,
   );
 
   // Set access token
@@ -858,9 +869,9 @@ Deno.test("send should do nothing if socket is not initialized", () => {
   const testData = {
     meta: {
       requestID: "test-request-id",
-      directive: PlatformDirectives.PlatformApplicationsStaterequest
+      directive: PlatformDirectives.PlatformApplicationsStaterequest,
     },
-    payload: { test: true }
+    payload: { test: true },
   };
 
   // This should not throw an error
@@ -878,7 +889,7 @@ Deno.test("sendAndGetResponse should throw error if socket is not connected", as
     testTokenUrl,
     testDeviceId,
     testClientId,
-    testClientSecret
+    testClientSecret,
   );
 
   // Set access token
@@ -889,9 +900,9 @@ Deno.test("sendAndGetResponse should throw error if socket is not connected", as
   const testData = {
     meta: {
       requestID: "test-request-id",
-      directive: PlatformDirectives.PlatformApplicationsStaterequest
+      directive: PlatformDirectives.PlatformApplicationsStaterequest,
     },
-    payload: { test: true }
+    payload: { test: true },
   };
 
   // This should throw an error
@@ -901,7 +912,7 @@ Deno.test("sendAndGetResponse should throw error if socket is not connected", as
       await connection.sendAndGetResponse(testData);
     },
     Error,
-    "WebSocket is not connected"
+    "WebSocket is not connected",
   );
 });
 
@@ -916,7 +927,7 @@ Deno.test("sendAndGetResponse should send data and wait for response", async () 
     testTokenUrl,
     testDeviceId,
     testClientId,
-    testClientSecret
+    testClientSecret,
   );
 
   // Set access token
@@ -936,11 +947,11 @@ Deno.test("sendAndGetResponse should send data and wait for response", async () 
     const response = {
       meta: {
         requestID: event,
-        messageCode: MessageCodes.OK
+        messageCode: MessageCodes.OK,
       },
       payload: {
-        result: "success"
-      }
+        result: "success",
+      },
     };
 
     waitForResolveValue = response;
@@ -953,9 +964,9 @@ Deno.test("sendAndGetResponse should send data and wait for response", async () 
   const testData = {
     meta: {
       requestID: requestId,
-      directive: PlatformDirectives.PlatformApplicationsStaterequest
+      directive: PlatformDirectives.PlatformApplicationsStaterequest,
     },
-    payload: { test: true }
+    payload: { test: true },
   };
 
   // Call sendAndGetResponse
@@ -989,16 +1000,15 @@ Deno.test("sendAndGetResponse should throw PlatformResponseError for critical er
     testTokenUrl,
     testDeviceId,
     testClientId,
-    testClientSecret
+    testClientSecret,
   );
 
   // Set access token
   connection.access_token = testToken;
 
-
-	const mockWs = mockWebSocket();
-	// @ts-ignore - Accessing private property for testing
-	connection._socket = mockWs;
+  const mockWs = mockWebSocket();
+  // @ts-ignore - Accessing private property for testing
+  connection._socket = mockWs;
 
   // Mock the waitFor method to return error
   connection.waitFor = () => {
@@ -1006,11 +1016,11 @@ Deno.test("sendAndGetResponse should throw PlatformResponseError for critical er
     const response = {
       meta: {
         requestID: "test-request-id",
-        messageCode: MessageCodes.HARDWAREERROR
+        messageCode: MessageCodes.HARDWAREERROR,
       },
       payload: {
-        error: "Hardware failure"
-      }
+        error: "Hardware failure",
+      },
     };
 
     return Promise.resolve(response);
@@ -1021,9 +1031,9 @@ Deno.test("sendAndGetResponse should throw PlatformResponseError for critical er
   const testData = {
     meta: {
       requestID: "test-request-id",
-      directive: PlatformDirectives.PlatformApplicationsStaterequest
+      directive: PlatformDirectives.PlatformApplicationsStaterequest,
     },
-    payload: { test: true }
+    payload: { test: true },
   };
 
   // Should throw PlatformResponseError
@@ -1033,44 +1043,47 @@ Deno.test("sendAndGetResponse should throw PlatformResponseError for critical er
       await connection.sendAndGetResponse(testData);
     },
     PlatformResponseError,
-    "Platform returned status code:"
+    "Platform returned status code:",
   );
 });
 
 // Test error handling in message processing
-Deno.test("Connection should handle malformed JSON in onmessage handler", mockGlobal(async () => {
-  mockFetch();
-  const mockWs = mockWebSocket();
+Deno.test(
+  "Connection should handle malformed JSON in onmessage handler",
+  mockGlobal(async () => {
+    mockFetch();
+    const mockWs = mockWebSocket();
 
-  const connection = await Connection.connect(
-    testBaseUrl,
-    testTokenUrl,
-    testDeviceId,
-    testClientId,
-    testClientSecret
-  );
+    const connection = await Connection.connect(
+      testBaseUrl,
+      testTokenUrl,
+      testDeviceId,
+      testClientId,
+      testClientSecret,
+    );
 
-  // Track if error event is emitted
-  let errorEventFired = false;
-  connection.once("error", () => {
-    errorEventFired = true;
-  });
+    // Track if error event is emitted
+    let errorEventFired = false;
+    connection.once("error", () => {
+      errorEventFired = true;
+    });
 
-  // Create a message event with invalid JSON
-  const messageEvent = {
-    type: "message",
-    data: "This is not valid JSON",
-    target: mockWs
-  } as unknown as MessageEvent;
+    // Create a message event with invalid JSON
+    const messageEvent = {
+      type: "message",
+      data: "This is not valid JSON",
+      target: mockWs,
+    } as unknown as MessageEvent;
 
-  // Trigger the onmessage handler
-  if (mockWs.onmessage) {
-    mockWs.onmessage(messageEvent);
-  }
+    // Trigger the onmessage handler
+    if (mockWs.onmessage) {
+      mockWs.onmessage(messageEvent);
+    }
 
-  // Verify error event was emitted
-  assertEquals(errorEventFired, true);
-}));
+    // Verify error event was emitted
+    assertEquals(errorEventFired, true);
+  }),
+);
 
 Deno.test("sendAndGetResponse should set deviceID if it's null or default", async () => {
   const connection = new Connection(
@@ -1078,7 +1091,7 @@ Deno.test("sendAndGetResponse should set deviceID if it's null or default", asyn
     testTokenUrl,
     testDeviceId,
     testClientId,
-    testClientSecret
+    testClientSecret,
   );
 
   // Set access token
@@ -1094,8 +1107,8 @@ Deno.test("sendAndGetResponse should set deviceID if it's null or default", asyn
     return Promise.resolve({
       meta: {
         requestID: "test-request-id",
-        messageCode: MessageCodes.OK
-      }
+        messageCode: MessageCodes.OK,
+      },
     });
   };
 
@@ -1105,9 +1118,9 @@ Deno.test("sendAndGetResponse should set deviceID if it's null or default", asyn
     meta: {
       requestID: "test-request-id",
       directive: PlatformDirectives.PlatformApplicationsStaterequest,
-      deviceID: "00000000-0000-0000-0000-000000000000"
+      deviceID: "00000000-0000-0000-0000-000000000000",
     },
-    payload: { test: true }
+    payload: { test: true },
   };
 
   // @ts-ignore - Testing with simplified data structure
@@ -1134,9 +1147,9 @@ Deno.test("sendAndGetResponse should set deviceID if it's null or default", asyn
     meta: {
       requestID: "test-request-id-2",
       directive: PlatformDirectives.PlatformApplicationsStaterequest,
-      deviceID: null
+      deviceID: null,
     },
-    payload: { test: true }
+    payload: { test: true },
   };
 
   // @ts-ignore - Testing with simplified data structure
@@ -1156,59 +1169,63 @@ Deno.test("sendAndGetResponse should set deviceID if it's null or default", asyn
 });
 
 // Tests for close method
-Deno.test("close should clear refresher timeout and close socket", mockGlobal(async () => {
-  let timeoutCleared = false;
+Deno.test(
+  "close should clear refresher timeout and close socket",
+  mockGlobal(async () => {
+    let timeoutCleared = false;
 
-	global.fetch = (() => {
-		return Promise.resolve(new MockResponse(200, {
-			access_token: testToken,
-			expires_in: 3600,
-			token_type: "Bearer"
-		}) as unknown as Response);
-	});
+    global.fetch = () => {
+      return Promise.resolve(
+        new MockResponse(200, {
+          access_token: testToken,
+          expires_in: 3600,
+          token_type: "Bearer",
+        }) as unknown as Response,
+      );
+    };
 
-	// Create a mock WebSocket
-	const mockWs = mockWebSocket();
+    // Create a mock WebSocket
+    const mockWs = mockWebSocket();
 
-  // Create connection
-	const connection = await Connection.connect(
-		testBaseUrl,
-		testTokenUrl,
-		testDeviceId,
-		testClientId,
-		testClientSecret
-	)
+    // Create connection
+    const connection = await Connection.connect(
+      testBaseUrl,
+      testTokenUrl,
+      testDeviceId,
+      testClientId,
+      testClientSecret,
+    );
 
-  // Set a fake refresher
-  // @ts-ignore - Accessing private property for testing
-  const mockTimeoutId = connection._refresher;
-	// Set up clearTimeout mock
-	global.clearTimeout = ((id?: number) => {
-		if (id === mockTimeoutId) {
-			timeoutCleared = true;
-		}
-		clearTimeout(id)
-	}) as typeof clearTimeout;
+    // Set a fake refresher
+    // @ts-ignore - Accessing private property for testing
+    const mockTimeoutId = connection._refresher;
+    // Set up clearTimeout mock
+    global.clearTimeout = ((id?: number) => {
+      if (id === mockTimeoutId) {
+        timeoutCleared = true;
+      }
+      clearTimeout(id);
+    }) as typeof clearTimeout;
 
+    let closeEventTriggered = false;
+    connection.once("close", () => closeEventTriggered = true);
 
-	let closeEventTriggered = false;
-	connection.once('close', () => closeEventTriggered = true);
+    // Call close
+    connection.close();
+    await delay(10); // Wait for close to complete
 
-  // Call close
-  connection.close();
-	await delay(10); // Wait for close to complete
+    // Verify timeout was cleared
+    assertEquals(connection._refresher, null);
 
-  // Verify timeout was cleared
-  assertEquals(connection._refresher, null);
+    assertEquals(timeoutCleared, true);
 
-  assertEquals(timeoutCleared, true);
+    // Verify socket close was called
+    assertEquals(mockWs.readyState, MockWebSocket.CLOSED);
 
-  // Verify socket close was called
-  assertEquals(mockWs.readyState, MockWebSocket.CLOSED);
-
-  // Verify once handler was registered
-  assertEquals(closeEventTriggered, true);
-}));
+    // Verify once handler was registered
+    assertEquals(closeEventTriggered, true);
+  }),
+);
 
 Deno.test("close should handle missing socket gracefully", () => {
   // Create connection without socket
@@ -1217,7 +1234,7 @@ Deno.test("close should handle missing socket gracefully", () => {
     testTokenUrl,
     testDeviceId,
     testClientId,
-    testClientSecret
+    testClientSecret,
   );
 
   // Verify no socket exists
@@ -1234,7 +1251,7 @@ Deno.test("close handler should clean up listeners and socket event handlers", (
     testTokenUrl,
     testDeviceId,
     testClientId,
-    testClientSecret
+    testClientSecret,
   );
 
   const mockWs = mockWebSocket();
@@ -1273,7 +1290,7 @@ Deno.test("waitFor should resolve when event is emitted", async () => {
     testTokenUrl,
     testDeviceId,
     testClientId,
-    testClientSecret
+    testClientSecret,
   );
 
   const testEventName = "test-event";
@@ -1294,7 +1311,7 @@ Deno.test("waitFor should reject when close event is emitted", async () => {
     testTokenUrl,
     testDeviceId,
     testClientId,
-    testClientSecret
+    testClientSecret,
   );
 
   // Create test event name
@@ -1309,7 +1326,7 @@ Deno.test("waitFor should reject when close event is emitted", async () => {
 
   // Verify promise is rejected with error
   await assertRejects(
-    async () => await waitPromise
+    async () => await waitPromise,
   );
 });
 
@@ -1319,13 +1336,13 @@ Deno.test("waitFor should clean up listeners after resolution", async () => {
     testTokenUrl,
     testDeviceId,
     testClientId,
-    testClientSecret
+    testClientSecret,
   );
 
   const testEventName = "test-event";
 
   // Track off calls
-  const offCalls: { event: string, listener: unknown }[] = [];
+  const offCalls: { event: string; listener: unknown }[] = [];
   const originalOff = connection.off.bind(connection);
 
   // @ts-ignore - Function signature is incompatible but needed for testing
@@ -1334,34 +1351,34 @@ Deno.test("waitFor should clean up listeners after resolution", async () => {
     return originalOff(event, listener) as ReturnType<typeof originalOff>;
   };
 
-	// Start waiting for the event
-	const waitPromise = connection.waitFor(testEventName);
+  // Start waiting for the event
+  const waitPromise = connection.waitFor(testEventName);
 
-	// Emit the event
-	connection.emit(testEventName, { test: "data" });
+  // Emit the event
+  connection.emit(testEventName, { test: "data" });
 
-	// Wait for promise to resolve
-	await waitPromise;
+  // Wait for promise to resolve
+  await waitPromise;
 
-	// Verify off was called for the close event
-	assertEquals(offCalls.length, 1);
-	assertEquals(offCalls[0].event, "close");
+  // Verify off was called for the close event
+  assertEquals(offCalls.length, 1);
+  assertEquals(offCalls[0].event, "close");
 
-	// Reset offCalls
-	offCalls.length = 0;
+  // Reset offCalls
+  offCalls.length = 0;
 
-	// Start another wait and emit close
-	const waitPromise2 = connection.waitFor(testEventName);
-	connection.emit("close", { type: "close" } as unknown as CloseEvent);
+  // Start another wait and emit close
+  const waitPromise2 = connection.waitFor(testEventName);
+  connection.emit("close", { type: "close" } as unknown as CloseEvent);
 
-	// Wait for promise to reject
-	try {
-		await waitPromise2;
-	} catch {
-		// Expected to throw
-	}
+  // Wait for promise to reject
+  try {
+    await waitPromise2;
+  } catch {
+    // Expected to throw
+  }
 
-	// Verify off was called for the test event
-	assertEquals(offCalls.length, 1);
-	assertEquals(offCalls[0].event, testEventName);
+  // Verify off was called for the test event
+  assertEquals(offCalls.length, 1);
+  assertEquals(offCalls[0].event, testEventName);
 });

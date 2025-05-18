@@ -141,9 +141,7 @@ export class Component extends EventEmitter {
       this.pendingCalls--;
       return r;
     };
-    return action().then(decrement).catch((e: any) =>
-      Promise.reject(decrement(e))
-    );
+    return action().then(decrement).catch((e: any) => Promise.reject(decrement(e)));
   }
 
   enable(...args: any[]): Promise<PlatformData> {
@@ -197,9 +195,7 @@ export class DataReaderComponent extends Component {
       data?.meta?.messageCode === MessageCodes.DATAPRESENT &&
       data?.payload?.dataRecords?.length
     ) {
-      this.previousData = data?.payload?.dataRecords?.map((dr: DataRecord) =>
-        dr?.data
-      );
+      this.previousData = data?.payload?.dataRecords?.map((dr: DataRecord) => dr?.data);
       this.emit("data", this.previousData);
     }
   }
@@ -306,10 +302,7 @@ export class Printer extends Component {
     const missingLink = (msg: string) => {
       throw new Error(msg);
     };
-    const linked =
-      component.linkedComponentIDs?.map((id) =>
-        cuss2.components[id as number] as Component
-      ) || [];
+    const linked = component.linkedComponentIDs?.map((id) => cuss2.components[id as number] as Component) || [];
 
     this.feeder = linked.find((c) => c instanceof Feeder) ||
       missingLink("Feeder not found for Printer " + this.id);

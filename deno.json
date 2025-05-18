@@ -12,5 +12,8 @@
     "@types/node": "npm:@types/node@^22.15.17",
     "cuss2-typescript-models": "npm:cuss2-typescript-models@1.0.6",
     "events": "node:events"
+  },
+  "fmt": {
+    "lineWidth": 120
   }
 }

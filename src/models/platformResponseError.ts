@@ -1,9 +1,4 @@
-import {
-  ComponentState,
-  MessageCodes,
-  PlatformData,
-  UniqueID,
-} from "cuss2-typescript-models";
+import { ComponentState, MessageCodes, PlatformData, UniqueID } from "cuss2-typescript-models";
 
 export class PlatformResponseError extends Error {
   constructor(pd: PlatformData) {

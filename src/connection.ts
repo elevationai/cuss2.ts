@@ -2,7 +2,7 @@ import { EventEmitter } from "events";
 import { helpers } from "./helper.ts";
 import { PlatformResponseError } from "./models/platformResponseError.ts";
 import { AuthenticationError } from "./models/Errors.ts";
-import type {ApplicationData, PlatformData, UniqueID} from "cuss2-typescript-models";
+import type { ApplicationData, PlatformData, UniqueID } from "cuss2-typescript-models";
 import { AuthResponse } from "./models/authResponse.ts";
 import { retry } from "jsr:@std/async/retry";
 
@@ -19,17 +19,17 @@ interface ConnectionEvents {
 
 // These are needed for overriding during testing
 export const global = {
-	WebSocket: globalThis.WebSocket,
-	fetch: globalThis.fetch,
-	clearTimeout: globalThis.clearTimeout.bind(globalThis),
-	setTimeout: globalThis.setTimeout.bind(globalThis),
-}
+  WebSocket: globalThis.WebSocket,
+  fetch: globalThis.fetch,
+  clearTimeout: globalThis.clearTimeout.bind(globalThis),
+  setTimeout: globalThis.setTimeout.bind(globalThis),
+};
 
 export class Connection extends EventEmitter {
-	// declare emit: <K extends keyof ConnectionEvents>(event: K, ...args: ConnectionEvents[K]) => boolean;
-	declare on: <K extends keyof ConnectionEvents>(event: K, listener: (data: PlatformData) => void) => this;
-	// declare once: <K extends keyof ConnectionEvents>(event: K, listener: (...args: ConnectionEvents[K]) => void) => this;
-	// declare off: <K extends keyof ConnectionEvents>(event: K, listener: (...args: ConnectionEvents[K]) => void) => this;
+  // declare emit: <K extends keyof ConnectionEvents>(event: K, ...args: ConnectionEvents[K]) => boolean;
+  declare on: <K extends keyof ConnectionEvents>(event: K, listener: (data: PlatformData) => void) => this;
+  // declare once: <K extends keyof ConnectionEvents>(event: K, listener: (...args: ConnectionEvents[K]) => void) => this;
+  // declare off: <K extends keyof ConnectionEvents>(event: K, listener: (...args: ConnectionEvents[K]) => void) => this;
 
   _auth: { url: string; client_id: string; client_secret: string };
   _baseURL: string;
@@ -38,17 +38,17 @@ export class Connection extends EventEmitter {
   _refresher: ReturnType<typeof setTimeout> | null = null;
   deviceID: UniqueID;
   access_token = "";
-	_retryOptions: {
-		maxAttempts?: number;
-		minTimeout?: number;
-		maxTimeout?: number;
-		multiplier?: number;
-		jitter?: number;
-	};
+  _retryOptions: {
+    maxAttempts?: number;
+    minTimeout?: number;
+    maxTimeout?: number;
+    multiplier?: number;
+    jitter?: number;
+  };
 
-	get isOpen() {
-		return this._socket && this._socket.readyState === global.WebSocket.OPEN;
-	}
+  get isOpen() {
+    return this._socket && this._socket.readyState === global.WebSocket.OPEN;
+  }
 
   constructor(
     baseURL: string,
@@ -56,9 +56,9 @@ export class Connection extends EventEmitter {
     deviceID: UniqueID,
     client_id: string,
     client_secret: string,
-		retryOptions?: typeof Connection.prototype._retryOptions,
+    retryOptions?: typeof Connection.prototype._retryOptions,
   ) {
-		super();
+    super();
     this.deviceID = deviceID;
     (this as EventEmitter).setMaxListeners(0); // Allow unlimited listeners
 
@@ -75,67 +75,67 @@ export class Connection extends EventEmitter {
     // Set up WebSocket URL
     this._socketURL = this._buildWebSocketURL(this._baseURL);
 
-		this._retryOptions = {
-			maxAttempts: 99,
-			minTimeout: 1000, //ms
-			maxTimeout: 64000, //ms
-			multiplier: 2,
-			jitter: 0.25,
-			...retryOptions
-		};
+    this._retryOptions = {
+      maxAttempts: 99,
+      minTimeout: 1000, //ms
+      maxTimeout: 64000, //ms
+      multiplier: 2,
+      jitter: 0.25,
+      ...retryOptions,
+    };
   }
 
-	static async authorize(
-		url: string,
-		client_id: string,
-		client_secret: string,
-	): Promise<AuthResponse> {
-		log("info", `Authorizing client '${client_id}'`, url);
+  static async authorize(
+    url: string,
+    client_id: string,
+    client_secret: string,
+  ): Promise<AuthResponse> {
+    log("info", `Authorizing client '${client_id}'`, url);
 
-		const params = new URLSearchParams();
-		params.append("client_id", client_id);
-		params.append("client_secret", client_secret);
-		params.append("grant_type", "client_credentials");
+    const params = new URLSearchParams();
+    params.append("client_id", client_id);
+    params.append("client_secret", client_secret);
+    params.append("grant_type", "client_credentials");
 
-		const response = await global.fetch(url, {
-			method: "POST",
-			headers: { "Content-Type": "application/x-www-form-urlencoded" },
-			redirect: "follow",
-			body: params.toString(), // Form-encoded data
-		});
+    const response = await global.fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      redirect: "follow",
+      body: params.toString(), // Form-encoded data
+    });
 
-		if (response.status === 401) {
-			throw new AuthenticationError("Invalid Credentials", 401);
-		}
+    if (response.status === 401) {
+      throw new AuthenticationError("Invalid Credentials", 401);
+    }
 
-		const data = await response.json();
-		return {
-			access_token: data.access_token,
-			expires_in: data.expires_in,
-			token_type: data.token_type,
-		};
-	}
+    const data = await response.json();
+    return {
+      access_token: data.access_token,
+      expires_in: data.expires_in,
+      token_type: data.token_type,
+    };
+  }
 
-	static async connect(
-		baseURL: string,
-		tokenURL: string | null,
-		deviceID: string,
-		client_id: string,
-		client_secret: string,
-		retryOptions?: typeof Connection.prototype._retryOptions,
-	): Promise<Connection> {
-		using connection = new Connection(
-			baseURL,
-			tokenURL,
-			deviceID,
-			client_id,
-			client_secret,
-			retryOptions
-		);
-		await connection._authenticateAndQueueTokenRefresh();
-		await connection._createWebSocketAndAttachEventHandlers();
-		return connection;
-	}
+  static async connect(
+    baseURL: string,
+    tokenURL: string | null,
+    deviceID: string,
+    client_id: string,
+    client_secret: string,
+    retryOptions?: typeof Connection.prototype._retryOptions,
+  ): Promise<Connection> {
+    using connection = new Connection(
+      baseURL,
+      tokenURL,
+      deviceID,
+      client_id,
+      client_secret,
+      retryOptions,
+    );
+    await connection._authenticateAndQueueTokenRefresh();
+    await connection._createWebSocketAndAttachEventHandlers();
+    return connection;
+  }
 
   private _cleanBaseURL(url: string): string {
     // Remove query parameters if present
@@ -190,75 +190,76 @@ export class Connection extends EventEmitter {
   }
 
   _createWebSocketAndAttachEventHandlers(): Promise<boolean> {
-		let retrying = true;
+    let retrying = true;
 
-		return retry(() => new Promise<boolean>((resolve, reject) => {
-			if (this.isOpen) {
-				log("error", "open socket already exists");
-				return resolve(true);
-			}
+    return retry(() =>
+      new Promise<boolean>((resolve, reject) => {
+        if (this.isOpen) {
+          log("error", "open socket already exists");
+          return resolve(true);
+        }
 
-			// This can create synchronous Errors and will reject the promise
-			const socket = new global.WebSocket(this._socketURL);
+        // This can create synchronous Errors and will reject the promise
+        const socket = new global.WebSocket(this._socketURL);
 
-			socket.onopen = () => {
-				log("info", "Socket opened: ", this._socketURL);
-				this._socket = socket;
-				retrying = false;
-				resolve(true);
-				this.emit('open')
-			};
+        socket.onopen = () => {
+          log("info", "Socket opened: ", this._socketURL);
+          this._socket = socket;
+          retrying = false;
+          resolve(true);
+          this.emit("open");
+        };
 
-			socket.onmessage = (event) => {
-				try {
-					const data = JSON.parse(event.data);
+        socket.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
 
-					if (data.ping) {
-						socket.send(`{ "pong": ${Date.now()} }`);
-						this.emit("ping", data);
-						return;
-					}
+            if (data.ping) {
+              socket.send(`{ "pong": ${Date.now()} }`);
+              this.emit("ping", data);
+              return;
+            }
 
-					if (data.ackCode) {
-						this.emit("ack", data);
-						return;
-					}
+            if (data.ackCode) {
+              this.emit("ack", data);
+              return;
+            }
 
-					log("socket.onmessage", event);
-					const platformData = data as PlatformData;
-					this.emit("message", platformData);
+            log("socket.onmessage", event);
+            const platformData = data as PlatformData;
+            this.emit("message", platformData);
 
-					if (platformData?.meta?.requestID) {
-						this.emit(String(platformData.meta.requestID), platformData);
-					}
-				} catch (error) {
-					log("error", "Error processing message:", error);
-					this.emit("error", error);
-				}
-			};
+            if (platformData?.meta?.requestID) {
+              this.emit(String(platformData.meta.requestID), platformData);
+            }
+          } catch (error) {
+            log("error", "Error processing message:", error);
+            this.emit("error", error);
+          }
+        };
 
-			socket.onclose = async (e) => {
-				log('Websocket Close:', e.reason)
-				socket.onopen = null;
-				socket.onclose = null;
-				socket.onerror = null;
-				socket.onmessage = null;
+        socket.onclose = async (e) => {
+          log("Websocket Close:", e.reason);
+          socket.onopen = null;
+          socket.onclose = null;
+          socket.onerror = null;
+          socket.onmessage = null;
 
-				this.emit('close', e)
+          this.emit("close", e);
 
-				// normal close (probably from calling the close() method)
-				if (e.code === 1000) return;
+          // normal close (probably from calling the close() method)
+          if (e.code === 1000) return;
 
-				if (retrying) {
-					reject(e); // cause retry to try again
-				}
-			}
+          if (retrying) {
+            reject(e); // cause retry to try again
+          }
+        };
 
-			socket.onerror = (e) => {
-				log("Websocket Error:", e);
-				this.emit("error", e);
-			};
-		}), this._retryOptions);
+        socket.onerror = (e) => {
+          log("Websocket Error:", e);
+          this.emit("error", e);
+        };
+      }), this._retryOptions);
   }
 
   send(data: ApplicationData) {
@@ -318,9 +319,9 @@ export class Connection extends EventEmitter {
     });
   }
 
-	[Symbol.dispose]() {
-		if (this._refresher) {
-			clearTimeout(this._refresher);
-		}
-	}
+  [Symbol.dispose]() {
+    if (this._refresher) {
+      clearTimeout(this._refresher);
+    }
+  }
 }

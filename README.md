@@ -1,8 +1,7 @@
 # CUSS2.ts for Deno
 
-This is a Deno-compatible port of the CUSS2.js TypeScript SDK for interacting
-with a CUSS (Common Use Self-Service) 2.0 platform. It facilitates developing
-applications for self-service check-in, self-tagging, and self bag-drop in the
+This is a Deno-compatible port of the CUSS2.js TypeScript SDK for interacting with a CUSS (Common Use Self-Service) 2.0
+platform. It facilitates developing applications for self-service check-in, self-tagging, and self bag-drop in the
 airline industry.
 
 ## Usage
@@ -48,8 +47,7 @@ await cuss2.requestActiveState();
    - Manages WebSocket lifecycle
    - Sends/receives messages to/from the platform
 
-3. **Component Model**: Provides interfaces for various CUSS2 peripheral
-   devices:
+3. **Component Model**: Provides interfaces for various CUSS2 peripheral devices:
    - BagTagPrinter
    - BoardingPassPrinter
    - BarcodeReader
@@ -59,9 +57,8 @@ await cuss2.requestActiveState();
 
 ## State Transitions
 
-One of the most important aspects in a CUSS platform is the ability to
-transition between application states correctly. The library provides simple
-event-based mechanisms to handle these transitions.
+One of the most important aspects in a CUSS platform is the ability to transition between application states correctly.
+The library provides simple event-based mechanisms to handle these transitions.
 
 ```mermaid
 sequenceDiagram
@@ -105,9 +102,8 @@ cuss2.on("deactivated", () => {
 
 ### Interacting with CUSS Devices
 
-The library provides a simple and intuitive interface to interact with common
-CUSS devices, that enable developer to develop complex platform interactions
-without any unnecessary boilerplate.
+The library provides a simple and intuitive interface to interact with common CUSS devices, that enable developer to
+develop complex platform interactions without any unnecessary boilerplate.
 
 ```mermaid
 sequenceDiagram
