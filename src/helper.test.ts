@@ -1,5 +1,4 @@
 import { assertEquals, assertExists, assertInstanceOf } from "https://deno.land/std/testing/asserts.ts";
-import { spy } from "https://deno.land/std/testing/mock.ts";
 import {
   LogMessage,
   log,
@@ -11,7 +10,7 @@ import {
   MessageCodes,
   PlatformDirectives,
   ApplicationStateCodes,
-  ApplicationStateChangeReasonCodes, 
+  ApplicationStateChangeReasonCodes,
   ApplicationTransfer
 } from "cuss2-typescript-models";
 import { ApplicationState } from "cuss2-typescript-models";
@@ -27,27 +26,27 @@ Deno.test("log function should emit log event with LogMessage", () => {
   // Instead of replacing the emit method, we'll spy on the event emitter
   let capturedEvent: unknown;
   let capturedData: unknown;
-  
+
   // We'll just add a listener without messing with existing ones
   let emitted = false;
-  
+
   const listener = (data: unknown) => {
     emitted = true;
     capturedEvent = "log";
     capturedData = data;
   };
-  
+
   logger.on("log", listener);
-  
+
   try {
     // Call the log function
     log("debug", "testAction", { test: "data" });
-    
+
     // Verify event was emitted with correct parameters
     assertEquals(emitted, true);
     assertEquals(capturedEvent, "log");
     assertInstanceOf(capturedData as LogMessage, LogMessage);
-    
+
     const logMessage = capturedData as LogMessage;
     assertEquals(logMessage.level, "debug");
     assertEquals(logMessage.action, "testAction");

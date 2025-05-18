@@ -73,52 +73,12 @@ function validateComponentId(componentID: unknown) {
 }
 
 export class Cuss2 extends EventEmitter {
-  static async connect(
-    wss: string,
-    oauth: string,
-    deviceID: string = "00000000-0000-0000-0000-000000000000",
-    client_id: string,
-    client_secret: string,
-    requestUnavailable = true,
-  ): Promise<Cuss2> {
-    const connection = await Connection.connect(
-      wss,
-      oauth,
-      deviceID,
-      client_id,
-      client_secret,
-    );
-    const cuss2 = new Cuss2(connection);
-    cuss2.requestUnavailableAfterInitialize = requestUnavailable;
-
-    await cuss2._initialize(requestUnavailable);
-    return cuss2;
-  }
-
-  private constructor(connection: Connection) {
-    super();
-    this.connection = connection;
-    // Subscribe to messages from the CUSS 2 platform
-    connection.on("message", (e) => this._handleWebSocketMessage(e));
-    // Subscribe to the connection being closed and attempt to reconnect
-    connection.on("close", async () => {
-      await connection._connect();
-      await this._initialize(this.requestUnavailableAfterInitialize);
-    });
-  }
-
   connection: Connection;
   environment: EnvironmentLevel = {} as EnvironmentLevel;
   components: any | undefined = undefined;
 
   // State management
-  private _currentState: StateChange = new StateChange(
-    AppState.STOPPED,
-    AppState.STOPPED,
-  );
-  private _currentComponent: Component | null = null;
-
-  requestUnavailableAfterInitialize: boolean = true;
+  private _currentState: StateChange = new StateChange(AppState.STOPPED, AppState.STOPPED);
 
   bagTagPrinter?: BagTagPrinter;
   boardingPassPrinter?: BoardingPassPrinter;
@@ -148,7 +108,34 @@ export class Cuss2 extends EventEmitter {
     return this._currentState.current;
   }
 
-  async _initialize(requestUnavailable: boolean): Promise<any> {
+	private constructor(connection: Connection) {
+		super();
+		this.connection = connection;
+		// Subscribe to messages from the CUSS 2 platform
+		connection.on("message", (e) => this._handleWebSocketMessage(e));
+		connection.on("open", () => this._initialize());
+	}
+
+	static async connect(
+		wss: string,
+		oauth: string,
+		deviceID: string = "00000000-0000-0000-0000-000000000000",
+		client_id: string,
+		client_secret: string
+	): Promise<Cuss2> {
+		const connection = await Connection.connect(
+			wss,
+			oauth,
+			deviceID,
+			client_id,
+			client_secret,
+		);
+		const cuss2 = new Cuss2(connection);
+		await cuss2._initialize();
+		return cuss2;
+	}
+
+	async _initialize(): Promise<undefined> {
     log("info", "Getting Environment Information");
     const level = await this.api.getEnvironment();
 
@@ -171,9 +158,6 @@ export class Cuss2 extends EventEmitter {
       log("error", "error querying components", e);
       super.emit("queryError", e);
     });
-    if (requestUnavailable) {
-      await this.requestUnavailableState();
-    }
   }
 
   async _handleWebSocketMessage(platformData: PlatformData) {
@@ -227,8 +211,6 @@ export class Cuss2 extends EventEmitter {
       if (component && component.stateIsDifferent(platformData)) {
         component.updateState(platformData);
 
-        // Update current component and emit event
-        this._currentComponent = component;
         super.emit("componentStateChange", component);
 
         if (

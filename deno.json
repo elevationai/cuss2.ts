@@ -5,7 +5,7 @@
   },
   "compilerOptions": {
     "strict": true,
-    "lib": ["deno.window", "deno.ns", "esnext"],
+    "lib": ["deno.window", "deno.ns", "esnext", "dom"],
     "checkJs": true
   },
   "imports": {

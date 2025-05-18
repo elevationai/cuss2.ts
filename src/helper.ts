@@ -45,7 +45,7 @@ export const helpers = {
     const out: Record<string, string> = {};
     helpers.splitAndFilter(text, delimiter1).forEach((p) => {
       const [k, v] = p.split(delimiter2);
-      if (v) out[k] = v;
+			if (v && k) out[k] = v;
     });
     return out;
   },
@@ -121,7 +121,10 @@ export const Build = {
     const meta = {} as ApplicationDataMeta;
     meta.requestID = crypto.randomUUID();
     meta.directive = directive;
-    meta.componentID = componentID;
+    // Only set componentID if it's defined
+    if (componentID) {
+      meta.componentID = componentID;
+    }
     meta.deviceID = deviceID;
 
     const payload = {} as ApplicationDataPayload;
