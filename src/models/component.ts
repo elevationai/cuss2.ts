@@ -7,7 +7,6 @@ import {
   PlatformData,
 } from "cuss2-typescript-models";
 import { DeviceType } from "./deviceType.ts";
-import { PlatformResponseError } from "./platformResponseError.ts";
 
 // Define an interface for the API to replace 'any'
 interface ComponentAPI {
@@ -138,54 +137,54 @@ export class Component extends EventEmitter {
     this.emit("message", data);
   }
 
-  _call(action: () => Promise<PlatformData>) {
+  async _call(action: () => Promise<PlatformData>) {
     this.pendingCalls++;
-    const decrement = <T>(r: T): T => {
-      this.pendingCalls--;
+    try {
+      return await action();
+    }
+		catch (e) {
+      return await Promise.reject(e);
+    }
+		finally {
+			this.pendingCalls--;
+		}
+  }
+
+  async enable(): Promise<PlatformData> {
+    const r = await this._call(() => this.api.enable(this.id));
+    this.enabled = true;
+    return r;
+  }
+
+  async disable(): Promise<PlatformData> {
+    try {
+      const r = await this._call(() => this.api.disable(this.id));
+      this.enabled = false;
       return r;
-    };
-    return action().then(decrement).catch((e: unknown) => Promise.reject(decrement(e)));
-  }
-
-  enable(): Promise<PlatformData> {
-    return this._call(() => this.api.enable(this.id))
-      .then((r: PlatformData) => {
-        this.enabled = true;
-        return r;
-      });
-  }
-
-  disable(): Promise<PlatformData> {
-    return this._call(() => this.api.disable(this.id))
-      .then((r: PlatformData) => {
+    }
+		catch (e: unknown) {
+			const pd = e as PlatformData;
+      if (pd.meta.messageCode === MessageCodes.OUTOFSEQUENCE) {
         this.enabled = false;
-        return r;
-      })
-      .catch((e: PlatformResponseError) => {
-        if (e.messageCode === MessageCodes.OUTOFSEQUENCE) {
-          this.enabled = false;
-          // Cast e to PlatformData to satisfy the return type
-          return e as unknown as PlatformData;
-        }
-        return Promise.reject(e);
-      });
+        return pd;
+      }
+      return Promise.reject(e);
+    }
   }
 
-  cancel(): Promise<PlatformData> {
-    return this._call(() => this.api.cancel(this.id));
+  async cancel(): Promise<PlatformData> {
+    return await this._call(() => this.api.cancel(this.id));
   }
 
-  query(): Promise<PlatformData> {
-    return this._call(() => this.api.getStatus(this.id));
+  async query(): Promise<PlatformData> {
+    return await this._call(() => this.api.getStatus(this.id));
   }
 
   async setup(dataObj: Record<string, unknown>): Promise<PlatformData> {
-    // {dataRecords: object[]|null = null, illuminationData: object|null = null}
-    return await this.api.setup(this.id, dataObj);
+		return await this._call(() => this.api.setup(this.id, dataObj));
   }
 
   async send(dataObj: Record<string, unknown>): Promise<PlatformData> {
-    // {dataRecords: object[]|null = null, illuminationData: object|null = null}
-    return await this.api.send(this.id, dataObj);
+		return await this._call(() => this.api.send(this.id, dataObj));
   }
 }
