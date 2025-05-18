@@ -9,7 +9,7 @@ enum LightColorNameEnum {
   Green = "green",
   Blue = "blue",
   Yellow = "yellow",
-  White = "white"
+  White = "white",
 }
 
 export class Illumination extends Component {

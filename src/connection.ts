@@ -184,7 +184,8 @@ export class Connection extends EventEmitter {
           (expires - 1) * 1000,
         );
       }
-    } catch (error) {
+    }
+    catch (error) {
       log("error", "Authentication failed:", error);
       throw error;
     }
@@ -233,7 +234,8 @@ export class Connection extends EventEmitter {
             if (platformData?.meta?.requestID) {
               this.emit(String(platformData.meta.requestID), platformData);
             }
-          } catch (error) {
+          }
+          catch (error) {
             log("error", "Error processing message:", error);
             this.emit("error", error);
           }
@@ -291,7 +293,8 @@ export class Connection extends EventEmitter {
     const messageCode = message.meta?.messageCode;
     if (messageCode && helpers.isNonCritical(messageCode)) {
       return message;
-    } else {
+    }
+    else {
       throw new PlatformResponseError(message);
     }
   }

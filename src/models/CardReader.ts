@@ -1,7 +1,7 @@
 import { DataReaderComponent } from "./DataReaderComponent.ts";
 import { DeviceType } from "./deviceType.ts";
 import { Cuss2 } from "../cuss2.ts";
-import { EnvironmentComponent, CUSSDataTypes } from "cuss2-typescript-models";
+import { CUSSDataTypes, EnvironmentComponent } from "cuss2-typescript-models";
 
 export class CardReader extends DataReaderComponent {
   constructor(component: EnvironmentComponent, cuss2: Cuss2) {

@@ -1,9 +1,5 @@
 import { Component } from "./component.ts";
-import {
-  DataRecord,
-  MessageCodes,
-  PlatformData,
-} from "cuss2-typescript-models";
+import { DataRecord, MessageCodes, PlatformData } from "cuss2-typescript-models";
 import { DeviceType } from "./deviceType.ts";
 import { Cuss2 } from "../cuss2.ts";
 import { EnvironmentComponent } from "cuss2-typescript-models";

@@ -88,7 +88,8 @@ async function main() {
     await cuss2.requestAvailableState();
 
     console.log("Example running. Press Ctrl+C to exit.");
-  } catch (error) {
+  }
+  catch (error) {
     console.error("Error:", error);
   }
 }

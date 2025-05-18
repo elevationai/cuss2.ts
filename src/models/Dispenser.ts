@@ -23,7 +23,8 @@ export class Dispenser extends Component {
           this._mediaPresent = true;
           this.emit("mediaPresent", true);
         }
-      } else {
+      }
+      else {
         if (this._mediaPresent) {
           this._mediaPresent = false;
           this.emit("mediaPresent", false);

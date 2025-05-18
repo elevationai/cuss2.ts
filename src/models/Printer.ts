@@ -131,7 +131,8 @@ export class Printer extends Component {
     if (!this.ready && msg.meta.componentState === ComponentState.READY) {
       this.feeder.query().catch(console.error);
       this.dispenser.query().catch(console.error);
-    } else if (msg.meta.messageCode === MessageCodes.MEDIAPRESENT) {
+    }
+    else if (msg.meta.messageCode === MessageCodes.MEDIAPRESENT) {
       // Emit mediaPresent event on the dispenser
       this.dispenser.emit("mediaPresent", true);
       // query the dispenser- which will start a poller that will detect when the media has been taken

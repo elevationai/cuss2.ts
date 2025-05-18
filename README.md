@@ -161,7 +161,8 @@ const res = await cuss2?.barcodeReader.query();
 // validate component state
 if (res.meta.componentState !== ComponentState.READY) {
   console.log("Component is not ready");
-} else {
+}
+else {
   // Enable component
   await cuss2.barcodeReader.enable();
 

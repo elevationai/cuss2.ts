@@ -45,7 +45,8 @@ Deno.test("log function should emit log event with LogMessage", () => {
     assertEquals(logMessage.level, "debug");
     assertEquals(logMessage.action, "testAction");
     assertEquals(logMessage.data, { test: "data" });
-  } finally {
+  }
+  finally {
     // Remove our listener
     logger.off("log", listener);
   }

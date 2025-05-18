@@ -36,15 +36,6 @@ export { DeviceType } from "./deviceType.ts";
 export { PlatformResponseError } from "./platformResponseError.ts";
 
 // Re-export types from the models
-export type {
-  DataRecord,
-  EnvironmentComponent,
-  PlatformData
-} from "cuss2-typescript-models";
+export type { DataRecord, EnvironmentComponent, PlatformData } from "cuss2-typescript-models";
 
-export {
-  ComponentState,
-  CUSSDataTypes,
-  MessageCodes,
-  PlatformDirectives,
-} from "cuss2-typescript-models";
+export { ComponentState, CUSSDataTypes, MessageCodes, PlatformDirectives } from "cuss2-typescript-models";

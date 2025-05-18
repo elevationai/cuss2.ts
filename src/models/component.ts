@@ -1,11 +1,6 @@
 import { EventEmitter } from "events";
 import { Cuss2 } from "../cuss2.ts";
-import {
-  ComponentState,
-  EnvironmentComponent,
-  MessageCodes,
-  PlatformData,
-} from "cuss2-typescript-models";
+import { ComponentState, EnvironmentComponent, MessageCodes, PlatformData } from "cuss2-typescript-models";
 import { DeviceType } from "./deviceType.ts";
 
 // Define an interface for the API to replace 'any'
@@ -142,12 +137,12 @@ export class Component extends EventEmitter {
     try {
       return await action();
     }
-		catch (e) {
+    catch (e) {
       return await Promise.reject(e);
     }
-		finally {
-			this.pendingCalls--;
-		}
+    finally {
+      this.pendingCalls--;
+    }
   }
 
   async enable(): Promise<PlatformData> {
@@ -162,8 +157,8 @@ export class Component extends EventEmitter {
       this.enabled = false;
       return r;
     }
-		catch (e: unknown) {
-			const pd = e as PlatformData;
+    catch (e: unknown) {
+      const pd = e as PlatformData;
       if (pd.meta.messageCode === MessageCodes.OUTOFSEQUENCE) {
         this.enabled = false;
         return pd;
@@ -181,10 +176,10 @@ export class Component extends EventEmitter {
   }
 
   async setup(dataObj: Record<string, unknown>): Promise<PlatformData> {
-		return await this._call(() => this.api.setup(this.id, dataObj));
+    return await this._call(() => this.api.setup(this.id, dataObj));
   }
 
   async send(dataObj: Record<string, unknown>): Promise<PlatformData> {
-		return await this._call(() => this.api.send(this.id, dataObj));
+    return await this._call(() => this.api.send(this.id, dataObj));
   }
 }

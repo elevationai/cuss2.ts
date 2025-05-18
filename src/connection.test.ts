@@ -104,7 +104,8 @@ function mockGlobal(fn: () => Promise<unknown> | unknown): () => Promise<void> {
   return async () => {
     try {
       await fn();
-    } finally {
+    }
+    finally {
       global.WebSocket = globalThis.WebSocket;
       global.fetch = globalThis.fetch;
       global.setTimeout = globalThis.setTimeout.bind(globalThis);
@@ -544,7 +545,7 @@ Deno.test(
 
 // Directly test the isOpen check in _createWebSocketAndAttachEventHandlers
 Deno.test.only(
-	"_createWebSocketAndAttachEventHandlers should not create new WebSocket when isOpen is true",
+  "_createWebSocketAndAttachEventHandlers should not create new WebSocket when isOpen is true",
   mockGlobal(async () => {
     let constructorCalls = 0;
     mockFetch();
@@ -1399,7 +1400,8 @@ Deno.test("waitFor should clean up listeners after resolution", async () => {
   // Wait for promise to reject
   try {
     await waitPromise2;
-  } catch {
+  }
+  catch {
     // Expected to throw
   }
 
@@ -1478,7 +1480,8 @@ Deno.test(
 
       // Verify another timeout was set for the next refresh
       assertEquals(timeoutCalls.length, 2);
-    } finally {
+    }
+    finally {
       // Restore original method
       Connection.authorize = originalAuthorize;
     }

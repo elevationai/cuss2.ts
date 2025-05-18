@@ -193,7 +193,8 @@ export class Cuss2 extends EventEmitter {
         if (this._online) {
           this.checkRequiredComponentsAndSyncState();
         }
-      } else if (currentState === AppState.ACTIVE) {
+      }
+      else if (currentState === AppState.ACTIVE) {
         if (!payload?.applicationActivation) {
           this.multiTenant = payload?.applicationActivation?.executionMode === ExecutionModeEnum.MAM;
         }
@@ -255,7 +256,8 @@ export class Cuss2 extends EventEmitter {
         if (isFeeder(component)) instance = new Feeder(component, this);
         else if (isDispenser(component)) {
           instance = new Dispenser(component, this);
-        } else return;
+        }
+        else return;
 
         return components[id] = instance;
       });
@@ -266,50 +268,68 @@ export class Cuss2 extends EventEmitter {
 
         if (isAnnouncement(component)) {
           instance = this.announcement = new Announcement(component, this);
-        } else if (isBagTagPrinter(component)) {
+        }
+        else if (isBagTagPrinter(component)) {
           instance = this.bagTagPrinter = new BagTagPrinter(component, this);
-        } else if (isBoardingPassPrinter(component)) {
+        }
+        else if (isBoardingPassPrinter(component)) {
           instance = this.boardingPassPrinter = new BoardingPassPrinter(
             component,
             this,
           );
-        } else if (isDocumentReader(component)) {
+        }
+        else if (isDocumentReader(component)) {
           instance = this.documentReader = new DocumentReader(component, this);
-        } else if (isBarcodeReader(component)) {
+        }
+        else if (isBarcodeReader(component)) {
           instance = this.barcodeReader = new BarcodeReader(component, this);
-        } else if (isCardReader(component)) {
+        }
+        else if (isCardReader(component)) {
           instance = this.cardReader = new CardReader(component, this);
-        } else if (isKeypad(component)) {
+        }
+        else if (isKeypad(component)) {
           instance = this.keypad = new Keypad(component, this);
-        } else if (isBiometric(component)) {
+        }
+        else if (isBiometric(component)) {
           instance = this.biometric = new Biometric(component, this);
-        } else if (isScale(component)) {
+        }
+        else if (isScale(component)) {
           instance = this.scale = new Scale(component, this);
-        } else if (isCamera(component)) {
+        }
+        else if (isCamera(component)) {
           instance = this.camera = new Camera(component, this);
-        } else if (isInsertionBelt(component)) {
+        }
+        else if (isInsertionBelt(component)) {
           instance = this.insertionBelt = new InsertionBelt(component, this);
-        } else if (isVerificationBelt(component)) {
+        }
+        else if (isVerificationBelt(component)) {
           instance = this.verificationBelt = new VerificationBelt(
             component,
             this,
           );
-        } else if (isParkingBelt(component)) {
+        }
+        else if (isParkingBelt(component)) {
           instance = this.parkingBelt = new ParkingBelt(component, this);
-        } else if (isRFIDReader(component)) {
+        }
+        else if (isRFIDReader(component)) {
           instance = this.rfid = new RFID(component, this);
-        } else if (isBHS(component)) {
+        }
+        else if (isBHS(component)) {
           instance = this.bhs = new BHS(component, this);
-        } else if (isAEASBD(component)) {
+        }
+        else if (isAEASBD(component)) {
           instance = this.aeasbd = new AEASBD(component, this);
-        } // subcomponents
+        }
+        // subcomponents
         else if (isFeeder(component)) return; // instance = new Feeder(component, this);
         else if (isDispenser(component)) return; // instance = new Dispenser(component, this);
         else if (isIllumination(component)) {
           instance = this.illumination = new Illumination(component, this);
-        } else if (isHeadset(component)) {
+        }
+        else if (isHeadset(component)) {
           instance = this.headset = new Headset(component, this);
-        } else instance = new Component(component, this);
+        }
+        else instance = new Component(component, this);
 
         return components[id] = instance;
       });
@@ -398,7 +418,8 @@ export class Cuss2 extends EventEmitter {
         const ad = Build.stateChange(state, reasonCode, reason);
         response = await this.connection.sendAndGetResponse(ad);
         return response;
-      } finally {
+      }
+      finally {
         this.pendingStateChange = undefined;
       }
     },
@@ -549,7 +570,8 @@ export class Cuss2 extends EventEmitter {
           );
           this.requestAvailableState();
         }
-      } else {
+      }
+      else {
         log(
           "verbose",
           "[checkRequiredComponentsAndSyncState] Required components UNAVAILABLE:",
@@ -557,7 +579,8 @@ export class Cuss2 extends EventEmitter {
         );
         this.requestUnavailableState();
       }
-    } else if (this.components) {
+    }
+    else if (this.components) {
       this.requestUnavailableState();
     }
   }
