@@ -24,10 +24,10 @@ import { Cuss2 } from "https://deno.land/x/cuss2/mod.ts";
 // Connect to the CUSS2 platform
 const cuss2 = await Cuss2.connect(
   "wss://cuss-platform.example.com",
-  "https://oauth.example.com/token",
   "device-id",
   "client-id", 
-  "client-secret"
+  "client-secret",
+  "https://oauth.example.com/token" // Optional token URL
 );
 
 // Request available state

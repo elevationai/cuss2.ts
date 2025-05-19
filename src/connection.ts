@@ -49,10 +49,10 @@ export class Connection extends EventEmitter {
 
   constructor(
     baseURL: string,
-    tokenURL: string | null,
     deviceID: UniqueID,
     client_id: string,
     client_secret: string,
+    tokenURL?: string,
     retryOptions?: typeof Connection.prototype._retryOptions,
   ) {
     super();
@@ -64,7 +64,7 @@ export class Connection extends EventEmitter {
 
     // Set up token URL
     this._auth = {
-      url: tokenURL || `${this._baseURL}/oauth/token`,
+      url: tokenURL ?? `${this._baseURL}/oauth/token`,
       client_id,
       client_secret,
     };
@@ -115,18 +115,18 @@ export class Connection extends EventEmitter {
 
   static async connect(
     baseURL: string,
-    tokenURL: string | null,
     deviceID: string,
     client_id: string,
     client_secret: string,
+    tokenURL?: string,
     retryOptions?: typeof Connection.prototype._retryOptions,
   ): Promise<Connection> {
     using connection = new Connection(
       baseURL,
-      tokenURL,
       deviceID,
       client_id,
       client_secret,
+      tokenURL,
       retryOptions,
     );
     await connection._authenticateAndQueueTokenRefresh();

@@ -463,10 +463,10 @@ Deno.test(
 
     const connection = await Connection.connect(
       testBaseUrl,
-      testTokenUrl,
       testDeviceId,
       testClientId,
       testClientSecret,
+      testTokenUrl,
     );
 
     // @ts-ignore - Accessing private property for testing
@@ -486,10 +486,10 @@ Deno.test(
 
     const connection = await Connection.connect(
       testBaseUrl,
-      testTokenUrl,
       testDeviceId,
       testClientId,
       testClientSecret,
+      testTokenUrl,
     );
 
     // Track if error event is emitted
@@ -520,10 +520,10 @@ Deno.test(
 
     const connection = await Connection.connect(
       testBaseUrl,
-      testTokenUrl,
       testDeviceId,
       testClientId,
       testClientSecret,
+      testTokenUrl,
     );
 
     // Reset fetch called flag
@@ -555,10 +555,10 @@ Deno.test(
     });
     const connection = await Connection.connect(
       testBaseUrl,
-      testTokenUrl,
       testDeviceId,
       testClientId,
       testClientSecret,
+      testTokenUrl,
     );
 
     assertEquals(connection.isOpen, true);
@@ -576,10 +576,10 @@ Deno.test(
 
     const connection = await Connection.connect(
       testBaseUrl,
-      testTokenUrl,
       testDeviceId,
       testClientId,
       testClientSecret,
+      testTokenUrl,
     );
 
     // Track emitted events
@@ -646,10 +646,10 @@ Deno.test(
     // Start connection process
     const connection = await Connection.connect(
       testBaseUrl,
-      testTokenUrl,
       testDeviceId,
       testClientId,
       testClientSecret,
+      testTokenUrl,
     );
 
     // Verify connection succeeded
@@ -682,10 +682,10 @@ Deno.test(
     // Start connection process
     const connection = await Connection.connect(
       testBaseUrl,
-      testTokenUrl,
       testDeviceId,
       testClientId,
       testClientSecret,
+      testTokenUrl,
       {
         minTimeout: 10,
       },
@@ -708,10 +708,10 @@ Deno.test(
 
     const connection = await Connection.connect(
       testBaseUrl,
-      testTokenUrl,
       testDeviceId,
       testClientId,
       testClientSecret,
+      testTokenUrl,
     );
 
     // Track if close event is emitted
@@ -772,10 +772,10 @@ Deno.test(
       async () => {
         await Connection.connect(
           testBaseUrl,
-          testTokenUrl,
           testDeviceId,
           testClientId,
           testClientSecret,
+          testTokenUrl,
         );
       },
       AuthenticationError,
@@ -1043,10 +1043,10 @@ Deno.test(
 
     const connection = await Connection.connect(
       testBaseUrl,
-      testTokenUrl,
       testDeviceId,
       testClientId,
       testClientSecret,
+      testTokenUrl,
     );
 
     // Track if error event is emitted
@@ -1177,10 +1177,10 @@ Deno.test(
     // Create connection
     const connection = await Connection.connect(
       testBaseUrl,
-      testTokenUrl,
       testDeviceId,
       testClientId,
       testClientSecret,
+      testTokenUrl,
     );
 
     // Set a fake refresher
