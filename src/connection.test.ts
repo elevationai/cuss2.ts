@@ -314,10 +314,10 @@ Deno.test(
 
     const connection = new Connection(
       testBaseUrl,
-      testTokenUrl,
       testDeviceId,
       testClientId,
       testClientSecret,
+			testTokenUrl,
     );
 
     // @ts-ignore - Accessing private method for testing
@@ -791,10 +791,10 @@ Deno.test("send should add missing oauthToken and deviceID to data", async () =>
 
   const connection = await Connection.connect(
     testBaseUrl,
-    testTokenUrl,
     testDeviceId,
     testClientId,
     testClientSecret,
+		testTokenUrl,
   );
 
   // Create test data without oauthToken and deviceID
@@ -1075,10 +1075,10 @@ Deno.test(
 Deno.test("sendAndGetResponse should set deviceID if it's null or default", async () => {
   const connection = new Connection(
     testBaseUrl,
-    testTokenUrl,
     testDeviceId,
     testClientId,
     testClientSecret,
+		testTokenUrl,
   );
 
   // Set access token
