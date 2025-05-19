@@ -1,12 +1,16 @@
 # CUSS2.ts
 
-A TypeScript SDK for the Common Use Self-Service (CUSS) 2.0 platform that facilitates developing applications for airline self-service kiosks.
+A TypeScript SDK for the Common Use Self-Service (CUSS) 2.0 platform that facilitates developing applications for
+airline self-service kiosks.
 
 [![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 ## Overview
 
-CUSS2.ts provides a robust TypeScript interface to interact with the CUSS 2.0 platform, enabling developers to create applications for self-service check-in, self-tagging, and self bag-drop terminals in the airline industry. This SDK handles platform state management, WebSocket communication, and provides a clean API for interacting with various peripheral devices.
+CUSS2.ts provides a robust TypeScript interface to interact with the CUSS 2.0 platform, enabling developers to create
+applications for self-service check-in, self-tagging, and self bag-drop terminals in the airline industry. This SDK
+handles platform state management, WebSocket communication, and provides a clean API for interacting with various
+peripheral devices.
 
 ## Installation
 
@@ -25,9 +29,9 @@ import { Cuss2 } from "https://deno.land/x/cuss2/mod.ts";
 const cuss2 = await Cuss2.connect(
   "wss://cuss-platform.example.com",
   "device-id",
-  "client-id", 
+  "client-id",
   "client-secret",
-  "https://oauth.example.com/token" // Optional token URL
+  "https://oauth.example.com/token", // Optional token URL
 );
 
 // Request available state
@@ -35,13 +39,13 @@ await cuss2.requestAvailableState();
 
 // Enable barcode reader and handle scan data
 await cuss2.barcodeReader.enable();
-cuss2.barcodeReader.on('data', (data) => {
-  console.log('Barcode scanned:', data);
+cuss2.barcodeReader.on("data", (data) => {
+  console.log("Barcode scanned:", data);
 });
 
 // Print a boarding pass
 await cuss2.boardingPassPrinter.enable();
-const printData = [ /* your boarding pass data */ ];
+const printData = [/* your boarding pass data */];
 await cuss2.boardingPassPrinter.send(printData);
 ```
 
@@ -88,17 +92,17 @@ The SDK supports all CUSS2 peripherals:
 
 ```typescript
 // Listen for state changes
-cuss2.on('stateChange', (stateChange) => {
+cuss2.on("stateChange", (stateChange) => {
   console.log(`State changed from ${stateChange.previous} to ${stateChange.current}`);
 });
 
 // Listen for component data
-cuss2.barcodeReader.on('data', (data) => {
-  console.log('Barcode data:', data);
+cuss2.barcodeReader.on("data", (data) => {
+  console.log("Barcode data:", data);
 });
 
 // Listen for component state changes
-cuss2.on('componentStateChange', (component) => {
+cuss2.on("componentStateChange", (component) => {
   console.log(`Component ${component.id} state changed to ${component._componentState}`);
 });
 ```
@@ -112,8 +116,8 @@ cuss2.on('componentStateChange', (component) => {
 await cuss2.barcodeReader.enable();
 
 // Set up event listener for scanned data
-cuss2.barcodeReader.on('data', (data) => {
-  console.log('Barcode scanned:', data);
+cuss2.barcodeReader.on("data", (data) => {
+  console.log("Barcode scanned:", data);
 });
 
 // Disable when done
@@ -129,7 +133,7 @@ await cuss2.boardingPassPrinter.enable();
 // Create print data
 const printData = [{
   data: "LT01...",
-  dsTypes: [CUSSDataTypes.ITPS]
+  dsTypes: [CUSSDataTypes.ITPS],
 }];
 
 // Send print job
@@ -180,7 +184,8 @@ deno task typedoc
 
 ## Development
 
-This project includes a `deno.json` configuration file with task definitions for building, testing, and documentation generation.
+This project includes a `deno.json` configuration file with task definitions for building, testing, and documentation
+generation.
 
 ```json
 {

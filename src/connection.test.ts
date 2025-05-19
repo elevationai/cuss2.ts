@@ -987,7 +987,7 @@ Deno.test("sendAndGetResponse should send data and wait for response", async () 
 });
 
 Deno.test("sendAndGetResponse should throw PlatformResponseError for critical errors", async () => {
-	mockWebSocket();
+  mockWebSocket();
 
   const connection = await Connection.connect(
     testBaseUrl,

@@ -15,24 +15,24 @@ export class DataReaderComponent extends Component {
     }
   }
 
-	async read(ms: number = 30000): Promise<string[]> {
-		await this.enable();
+  async read(ms: number = 30000): Promise<string[]> {
+    await this.enable();
 
-		return new Promise<string[]>((resolve, reject) => {
-			// Create a timeout
-			const timeoutId = setTimeout(() => {
-				this.off("data", dataHandler);
-				reject(new Error(`Timeout of ${ms}ms exceeded`));
-			}, ms);
+    return new Promise<string[]>((resolve, reject) => {
+      // Create a timeout
+      const timeoutId = setTimeout(() => {
+        this.off("data", dataHandler);
+        reject(new Error(`Timeout of ${ms}ms exceeded`));
+      }, ms);
 
-			// Set up a one-time data handler
-			const dataHandler = (data: string[]): void => {
-				clearTimeout(timeoutId);
-				resolve(data);
-			};
+      // Set up a one-time data handler
+      const dataHandler = (data: string[]): void => {
+        clearTimeout(timeoutId);
+        resolve(data);
+      };
 
-			this.once("data", dataHandler);
-		})
-			.finally(() => this.disable());
-	}
+      this.once("data", dataHandler);
+    })
+      .finally(() => this.disable());
+  }
 }
