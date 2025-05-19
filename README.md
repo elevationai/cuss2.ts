@@ -1,181 +1,196 @@
-# CUSS2.ts for Deno
+# CUSS2.ts
 
-This is a Deno-compatible port of the CUSS2.js TypeScript SDK for interacting with a CUSS (Common Use Self-Service) 2.0
-platform. It facilitates developing applications for self-service check-in, self-tagging, and self bag-drop in the
-airline industry.
+A TypeScript SDK for the Common Use Self-Service (CUSS) 2.0 platform that facilitates developing applications for airline self-service kiosks.
 
-## Usage
+[![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
+## Overview
+
+CUSS2.ts provides a robust TypeScript interface to interact with the CUSS 2.0 platform, enabling developers to create applications for self-service check-in, self-tagging, and self bag-drop terminals in the airline industry. This SDK handles platform state management, WebSocket communication, and provides a clean API for interacting with various peripheral devices.
+
+## Installation
+
+This is a Deno project. You can import it directly in your Deno application:
+
+```typescript
+import { Cuss2 } from "https://deno.land/x/cuss2/mod.ts";
+```
+
+## Quick Start
 
 ```typescript
 import { Cuss2 } from "https://deno.land/x/cuss2/mod.ts";
 
 // Connect to the CUSS2 platform
 const cuss2 = await Cuss2.connect(
-  "wss://your-cuss-platform-url",
-  "https://your-oauth-url",
-  "your-device-id",
-  "your-client-id",
-  "your-client-secret",
+  "wss://cuss-platform.example.com",
+  "https://oauth.example.com/token",
+  "device-id",
+  "client-id", 
+  "client-secret"
 );
 
-// Query a component
-await cuss2.boardingPassPrinter.query();
+// Request available state
+await cuss2.requestAvailableState();
 
-// Enable a component
+// Enable barcode reader and handle scan data
 await cuss2.barcodeReader.enable();
-
-// Listen for barcode data events
-cuss2.barcodeReader.on("data", (data) => {
-  console.log("Barcode scanned:", data);
+cuss2.barcodeReader.on('data', (data) => {
+  console.log('Barcode scanned:', data);
 });
 
-// State transitions
+// Print a boarding pass
+await cuss2.boardingPassPrinter.enable();
+const printData = [ /* your boarding pass data */ ];
+await cuss2.boardingPassPrinter.send(printData);
+```
+
+## Features
+
+- **Complete TypeScript Support**: Fully typed interfaces for all CUSS2 components and responses
+- **WebSocket Communication**: Manages WebSocket lifecycle with the CUSS2 platform
+- **OAuth Authentication**: Handles authentication via OAuth
+- **State Management**: Easily transition through application states (INITIALIZE, UNAVAILABLE, AVAILABLE, ACTIVE)
+- **Component Management**: Interface with peripheral devices like printers, readers, and input devices
+- **Event-Driven Architecture**: Subscribe to events for state changes and device data
+- **Async/Await Support**: Modern Promise-based API
+- **Deno-First Development**: Built specifically for the Deno runtime
+
+## Core Concepts
+
+### Application States
+
+CUSS2 applications transition through defined states:
+
+- `INITIALIZE`: Initial startup state
+- `UNAVAILABLE`: Application is loaded but not available for passenger use
+- `AVAILABLE`: Application is ready for passenger use
+- `ACTIVE`: Application is actively being used by a passenger
+
+```typescript
+// Request state transitions
 await cuss2.requestUnavailableState();
 await cuss2.requestAvailableState();
 await cuss2.requestActiveState();
 ```
 
-## Core Components
+### Component Types
 
-1. **Cuss2**: The main class that provides an interface to the CUSS2 platform.
-   - Handles platform state management
-   - Manages component interactions
-   - Exposes device/component methods
+The SDK supports all CUSS2 peripherals:
 
-2. **Connection**: Manages WebSocket communication with the CUSS2 platform.
-   - Handles authentication via OAuth
-   - Manages WebSocket lifecycle
-   - Sends/receives messages to/from the platform
+- **Printers**: `BagTagPrinter`, `BoardingPassPrinter`
+- **Readers**: `BarcodeReader`, `CardReader`, `DocumentReader`, `RFID`
+- **Input/Biometric**: `Biometric`, `Camera`, `Keypad`
+- **Baggage**: `Scale`, `InsertionBelt`, `VerificationBelt`, `ParkingBelt`, `BHS`, `AEASBD`
+- **Feedback**: `Announcement`, `Illumination`, `Headset`
 
-3. **Component Model**: Provides interfaces for various CUSS2 peripheral devices:
-   - BagTagPrinter
-   - BoardingPassPrinter
-   - BarcodeReader
-   - CardReader
-   - DocumentReader
-   - and others
+### Event Handling
 
-## State Transitions
-
-One of the most important aspects in a CUSS platform is the ability to transition between application states correctly.
-The library provides simple event-based mechanisms to handle these transitions.
-
-```mermaid
-sequenceDiagram
-    Platform->>+App: Platform Initialize App
-    App-->>Platform: Request Unavailable
-    App-->>Platform: Check for required components
-    App-->>Platform: Request Available
-```
-
-```ts
-// CUSS Transitions
-
-// Instantiating a connection
-const cuss2 = await Cuss2.connect(
-  cuss2URL,
-  oauthURL,
-  deviceID,
-  clientId,
-  clientSecret,
-);
-
-// Moving to unavailable
-await cuss2.requestUnavailableState();
-
-// checking for a ATB Printer
-if (cuss2?.boardingPassPrinter) {
-  // Moving to Available
-  await cuss2.requestAvailableState();
-}
-
-// Listen for activation events
-cuss2.on("activated", () => {
-  console.log("Application is active");
+```typescript
+// Listen for state changes
+cuss2.on('stateChange', (stateChange) => {
+  console.log(`State changed from ${stateChange.previous} to ${stateChange.current}`);
 });
 
-// Listen for deactivation events
-cuss2.on("deactivated", () => {
-  console.log("Application is no longer active");
+// Listen for component data
+cuss2.barcodeReader.on('data', (data) => {
+  console.log('Barcode data:', data);
+});
+
+// Listen for component state changes
+cuss2.on('componentStateChange', (component) => {
+  console.log(`Component ${component.id} state changed to ${component._componentState}`);
 });
 ```
 
-### Interacting with CUSS Devices
+## Component Usage Examples
 
-The library provides a simple and intuitive interface to interact with common CUSS devices, that enable developer to
-develop complex platform interactions without any unnecessary boilerplate.
+### Barcode Reader
 
-```mermaid
-sequenceDiagram
-    App-->>Component: Query 
-    Component-->>App: RC_OK
-    App-->>Component: Enable
-    App-->>Component: Interactions
-    App-->>Component: Disable
+```typescript
+// Enable barcode reader
+await cuss2.barcodeReader.enable();
+
+// Set up event listener for scanned data
+cuss2.barcodeReader.on('data', (data) => {
+  console.log('Barcode scanned:', data);
+});
+
+// Disable when done
+await cuss2.barcodeReader.disable();
 ```
 
-#### Media Outputs
+### Printing
 
-```ts
-const cuss2 = await Cuss2.connect(cuss2URL, oauthURL, deviceID, clientId, clientSecret);
+```typescript
+// Enable printer
+await cuss2.boardingPassPrinter.enable();
 
-// query ATB
- const res = await cuss2?.boardingPassPrinter.query();
+// Create print data
+const printData = [{
+  data: "LT01...",
+  dsTypes: [CUSSDataTypes.ITPS]
+}];
 
- // validate component state
- if (res.meta.componentState !== ComponentState.READY) {
-    console.log('Component is not ready')
- } else {
+// Send print job
+await cuss2.boardingPassPrinter.setup(printData);
 
-  // Enable component
-  await cuss2.boardingPassPrinter.enable();
-
-  // SETUP ATB
-  await cuss2.boardingPassPrinter.setup(<PECTAB>);
-
-  // Print boarding pass
-  await cuss2.boardingPassPrinter.send(<PECTAB>);
-
-  // Helper function to do both setup and send
-  await cuss2.boardingPassPrinter.setupAndPrintRaw([<PECTAB_ARRAY>], <STREAM>);
-
-  // Disable component
-  await cuss2.boardingPassPrinter.disable();
- }
+// Disable when done
+await cuss2.boardingPassPrinter.disable();
 ```
 
-#### Media Input
+## Advanced Usage
 
-```ts
-const cuss2 = await Cuss2.connect(
-  cuss2URL,
-  oauthURL,
-  deviceID,
-  clientId,
-  clientSecret,
-);
+### Required Components
 
-// query component
-const res = await cuss2?.barcodeReader.query();
+Mark components as required to automatically manage application state:
 
-// validate component state
-if (res.meta.componentState !== ComponentState.READY) {
-  console.log("Component is not ready");
-}
-else {
-  // Enable component
-  await cuss2.barcodeReader.enable();
+```typescript
+// Mark barcode reader as required
+cuss2.barcodeReader.required = true;
 
-  // Listen for barcode data events
-  cuss2.barcodeReader.on("data", (data) => {
-    console.log(`Barcode Data ${data}`);
+// The SDK will automatically try to transition to UNAVAILABLE state
+// if any required component becomes unavailable
+```
 
-    // Disable component
-    cuss2.barcodeReader.disable();
-  });
+### Component Polling
+
+Components can be configured to automatically poll until ready:
+
+```typescript
+// Set a custom polling interval (milliseconds)
+cuss2.barcodeReader.pollingInterval = 5000;
+
+// Start polling until component is ready
+cuss2.barcodeReader.pollUntilReady();
+```
+
+## Building and Testing
+
+```bash
+# Build the project
+deno task build
+
+# Run tests
+deno task test
+
+# Generate documentation
+deno task typedoc
+```
+
+## Development
+
+This project includes a `deno.json` configuration file with task definitions for building, testing, and documentation generation.
+
+```json
+{
+  "tasks": {
+    "build": "deno run --allow-read --allow-write --allow-env --allow-run scripts/build.ts",
+    "test": "deno test --allow-net --allow-read"
+  }
 }
 ```
 
 ## License
 
-MIT
+This project is licensed under the MIT License - see the LICENSE file for details.
