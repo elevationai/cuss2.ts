@@ -26,10 +26,7 @@ export const global = {
 };
 
 export class Connection extends EventEmitter {
-  // declare emit: <K extends keyof ConnectionEvents>(event: K, ...args: ConnectionEvents[K]) => boolean;
   declare on: <K extends keyof ConnectionEvents>(event: K, listener: (data: PlatformData) => void) => this;
-  // declare once: <K extends keyof ConnectionEvents>(event: K, listener: (...args: ConnectionEvents[K]) => void) => this;
-  // declare off: <K extends keyof ConnectionEvents>(event: K, listener: (...args: ConnectionEvents[K]) => void) => this;
 
   _auth: { url: string; client_id: string; client_secret: string };
   _baseURL: string;
