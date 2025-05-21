@@ -78,6 +78,94 @@ await cuss2.requestAvailableState();
 await cuss2.requestActiveState();
 ```
 
+## Typical Application Startup
+
+```mermaid
+sequenceDiagram
+    Platform->>+App: Platform Initialize App
+    App-->>Platform: Request Unavailable
+    App-->>Platform: Check for required components
+    App-->>Platform: Request Available
+```
+
+## Example state events
+
+```ts
+// CUSS Transitions
+
+// Instantiating a connection
+const cuss2 = await Cuss2.connect(
+  cuss2URL,
+  oauthURL,
+  deviceID,
+  clientId,
+  clientSecret,
+);
+
+// Moving to unavailable
+await cuss2.requestUnavailableState();
+
+// checking for a ATB Printer
+if (cuss2?.boardingPassPrinter) {
+  // Moving to Available
+  await cuss2.requestAvailableState();
+}
+
+// Listen for activation events
+cuss2.on("activated", () => {
+  console.log("Application is active");
+});
+
+// Listen for deactivation events
+cuss2.on("deactivated", () => {
+  console.log("Application is no longer active");
+});
+```
+
+### Interacting with CUSS Devices
+
+This library offers a streamlined, intuitive interface for CUSS device interaction, enabling developers to build
+sophisticated platform integrations without unnecessary boilerplate code.
+
+```mermaid
+sequenceDiagram
+    App-->>Component: Query 
+    Component-->>App: RC_OK
+    App-->>Component: Enable
+    App-->>Component: Interactions
+    App-->>Component: Disable
+```
+
+#### Media Outputs
+
+```ts
+const cuss2 = await Cuss2.connect(cuss2URL, oauthURL, deviceID, clientId, clientSecret);
+
+// query ATB
+ const res = await cuss2?.boardingPassPrinter.query();
+
+ // validate component state
+ if (res.meta.componentState !== ComponentState.READY) {
+    console.log('Component is not ready')
+ } else {
+
+  // Enable component
+  await cuss2.boardingPassPrinter.enable();
+
+  // SETUP ATB
+  await cuss2.boardingPassPrinter.setup(<PECTAB>);
+
+  // Print boarding pass
+  await cuss2.boardingPassPrinter.send(<PECTAB>);
+
+  // Helper function to do both setup and send
+  await cuss2.boardingPassPrinter.setupAndPrintRaw([<PECTAB_ARRAY>], <STREAM>);
+
+  // Disable component
+  await cuss2.boardingPassPrinter.disable();
+ }
+```
+
 ### Component Types
 
 The SDK supports all CUSS2 peripherals:
