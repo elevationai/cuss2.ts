@@ -1,13 +1,13 @@
 # CUSS2.ts
 
-A TypeScript SDK for the Common Use Self-Service (CUSS) 2.0 platform that facilitates developing applications for
+A TypeScript SDK for the Common Use Self-Service version 2 (CUSS2)  platform that facilitates developing applications for
 airline self-service kiosks.
 
 [![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 ## Overview
 
-CUSS2.ts provides a robust TypeScript interface to interact with the CUSS 2.0 platform, enabling developers to create
+CUSS2.ts provides a robust TypeScript interface to interact with the CUSS2 platform, enabling developers to create
 applications for self-service check-in, self-tagging, and self bag-drop terminals in the airline industry. This SDK
 handles platform state management, WebSocket communication, and provides a clean API for interacting with various
 peripheral devices.
@@ -176,10 +176,7 @@ cuss2.barcodeReader.pollUntilReady();
 deno task build
 
 # Run tests
-deno task test
-
-# Generate documentation
-deno task typedoc
+deno test
 ```
 
 ## Development
